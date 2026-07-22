@@ -8,7 +8,9 @@ import Pontryagin.FiniteMeasureFubini
 import Pontryagin.FourierTransform
 import Pontryagin.L1Algebra
 import Pontryagin.PositiveType
+import Pontryagin.Spectrum
 import Pontryagin.StoneWeierstrassC0
+import Pontryagin.UnitizationSpectrum
 import Pontryagin.Topology
 import Pontryagin.Translation
 import Pontryagin.Duality
