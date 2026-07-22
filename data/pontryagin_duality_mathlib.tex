@@ -1,0 +1,2675 @@
+\documentclass[11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[a4paper,margin=30mm]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{booktabs,longtable,array}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage[nameinlink,noabbrev]{cleveref}
+\usepackage{listings}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!55!black,
+  citecolor=green!35!black,
+  urlcolor=blue!65!black,
+  pdftitle={Pontryagin Duality for Locally Compact Abelian Groups},
+  pdfauthor={Proof blueprint for Mathlib autoformalization}
+}
+
+\lstdefinelanguage{Lean}{
+  morekeywords={def,theorem,lemma,instance,noncomputable,section,namespace,end,where,by,
+    variable,open,scoped,deriving,inferInstance,exact,refine,fun,Type,Prop},
+  sensitive=true,
+  morecomment=[l]{--},
+  morecomment=[s]{/-}{-/},
+  morestring=[b]"
+}
+\lstset{
+  language=Lean,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue!55!black},
+  commentstyle=\color{green!35!black},
+  stringstyle=\color{orange!55!black},
+  columns=fullflexible,
+  keepspaces=true,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{black!20},
+  xleftmargin=0.5em,
+  xrightmargin=0.5em
+}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{claim}[theorem]{Claim}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{construction}[theorem]{Construction}
+\newtheorem{example}[theorem]{Example}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\T}{\mathbb T}
+\newcommand{\C}{\mathbb C}
+\newcommand{\R}{\mathbb R}
+\newcommand{\Z}{\mathbb Z}
+\newcommand{\N}{\mathbb N}
+\newcommand{\one}{\mathbf 1}
+\newcommand{\e}{\mathrm e}
+\newcommand{\id}{\mathrm{id}}
+\newcommand{\ev}{\operatorname{ev}}
+\newcommand{\supp}{\operatorname{supp}}
+\newcommand{\Span}{\operatorname{span}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\im}{\operatorname{im}}
+\newcommand{\argu}{\operatorname{arg}}
+\newcommand{\Cc}{C_{\mathrm c}}
+\newcommand{\Cb}{C_{\mathrm b}}
+\newcommand{\Czero}{C_0}
+\newcommand{\Lp}[1]{L^{#1}}
+\newcommand{\dual}[1]{\widehat{#1}}
+\newcommand{\bidual}[1]{\widehat{\widehat{#1}}}
+\newcommand{\polar}[1]{#1^{\perp}}
+\newcommand{\inv}{\vphantom{f}^{\vee}}
+\newcommand{\abs}[1]{\lvert #1\rvert}
+\newcommand{\norm}[1]{\lVert #1\rVert}
+\newcommand{\set}[1]{\left\{#1\right\}}
+\newcommand{\angles}[1]{\left\langle #1\right\rangle}
+\newcommand{\mathlib}{\textsf{Mathlib}}
+\newcommand{\Circle}{\texttt{Circle}}
+\newcommand{\PD}{\texttt{PontryaginDual}}
+
+\newenvironment{formalization}
+  {\begin{quote}\small\noindent\textbf{Formalization note.}\ }
+  {\end{quote}}
+
+\title{Pontryagin Duality for Locally Compact Abelian Groups\\
+\large A self-contained proof blueprint aligned with \mathlib}
+\author{Prepared for autoformalization}
+\date{Mathlib interface checked against v4.32.0 (July 2026)}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Let $G$ be a Hausdorff locally compact abelian topological group and let
+\[
+  \dual G=\Hom_{\mathrm{cts}}(G,\T)
+\]
+carry the compact--open topology.  We give a complete proof that the evaluation map
+\[
+  \alpha_G:G\longrightarrow\bidual G,
+  \qquad \alpha_G(x)(\chi)=\chi(x),
+\]
+is an isomorphism of topological groups.  The proof is analytic: compact--open topology,
+Haar measure, the commutative Banach algebra $\Lp1(G)$, positive-type functions, the GNS
+construction, Bochner's theorem, Fourier inversion, and Plancherel are developed in a
+dependency order suited to formalization.  We then prove annihilator duality, duality for
+closed subgroups and quotients, extension of characters, exactness, compact/discrete
+duality, naturality, and the standard examples.
+
+The target definition is exactly \mathlib's multiplicative definition
+\texttt{PontryaginDual A := A ->\_t* Circle}.  Generic results that should be imported
+from the library---Haar existence, Riesz--Markov, Fubini--Tonelli, Banach--Alaoglu,
+Krein--Milman, and Stone--Weierstrass---are isolated in an explicit foundation interface.
+Every argument specific to Pontryagin duality is proved below; no form of biduality,
+character extension, or an LCA structure theorem is used as an input.
+\end{abstract}
+
+\tableofcontents
+
+\section{Formalization contract and conventions}
+\label{sec:contract}
+
+\subsection{The mathematical category}
+
+Throughout the main proof, an \emph{LCA group} means a type $G$ equipped with a
+commutative group law and a Hausdorff locally compact topology for which multiplication
+and inversion are continuous.  We use multiplicative notation, including for $\R$ and
+$\Z$ when they occur as abstract groups.  The circle is
+\[
+  \T=\set{z\in\C:\abs z=1}
+\]
+with multiplication and its usual topology.  A \emph{character} of $G$ is a continuous
+group homomorphism $G\to\T$.
+
+No countability, metrizability, compact generation, or second-countability hypothesis is
+made.  Nets are used whenever sequential reasoning would introduce such a hypothesis.
+All measures are regular Borel (Radon) measures.  Equalities of $\Lp p$ functions are
+equalities almost everywhere; an equality between continuous functions obtained almost
+everywhere is upgraded to pointwise equality because Haar measure has full support.
+
+\subsection{The exact \mathlib interface}
+
+In \mathlib~v4.32.0 the relevant source file is
+\path{Mathlib/Topology/Algebra/PontryaginDual.lean}.  Its central definition is:
+
+\begin{lstlisting}
+def PontryaginDual := A ->_t* Circle
+deriving TopologicalSpace
+\end{lstlisting}
+
+Here \texttt{A ->\_t* B} is \path{ContinuousMonoidHom A B}; its topology is induced
+from the compact--open topology on continuous maps.  The file already provides:
+
+\begin{enumerate}[label=(M\arabic*)]
+\item a commutative group structure on \texttt{PontryaginDual A};
+\item Hausdorff and topological-group instances;
+\item local compactness of \texttt{PontryaginDual G} when $G$ is a locally compact
+  topological group;
+\item compactness of the dual of a discrete group and discreteness of the dual of a
+  compact group;
+\item the contravariant map
+\begin{lstlisting}
+def PontryaginDual.map (f : A ->_t* B) :
+    PontryaginDual B ->_t* PontryaginDual A :=
+  f.compLeft Circle
+\end{lstlisting}
+  together with \texttt{map\_apply}, \texttt{map\_one}, \texttt{map\_comp},
+  \texttt{map\_mul}, and \texttt{mapHom}.
+\end{enumerate}
+
+The intended new definition and theorem have the following shape.  Names are proposed,
+not asserted to exist already.
+
+\begin{lstlisting}
+noncomputable def PontryaginDual.eval
+    (G : Type*) [CommGroup G] [TopologicalSpace G]
+    [IsTopologicalGroup G] [LocallyCompactSpace G] :
+    G ->_t* PontryaginDual (PontryaginDual G) := ...
+
+theorem PontryaginDual.eval_bijective
+    [T2Space G] : Function.Bijective (PontryaginDual.eval G) := ...
+
+noncomputable def PontryaginDual.toDoubleDual
+    [T2Space G] :
+    ContinuousMulEquiv G (PontryaginDual (PontryaginDual G)) := ...
+\end{lstlisting}
+
+The defining simp lemma should be
+\begin{lstlisting}
+@[simp] theorem eval_apply (x : G) (chi : PontryaginDual G) :
+    PontryaginDual.eval G x chi = chi x := rfl
+\end{lstlisting}
+and naturality should be exposed in a form that rewrites without category theory:
+\begin{lstlisting}
+theorem map_map_eval (f : G ->_t* H) :
+    ContinuousMonoidHom.comp
+      (PontryaginDual.map (PontryaginDual.map f))
+      (PontryaginDual.eval G)
+      = ContinuousMonoidHom.comp (PontryaginDual.eval H) f := ...
+\end{lstlisting}
+
+\subsection{Foundation interface}
+\label{subsec:foundations}
+
+Calling the account ``self-contained'' means that every Pontryagin-specific construction
+and inference is present.  Re-proving the foundations of measure theory and functional
+analysis inside the same document would obscure the formalization boundary.  The proof
+uses precisely the following generic results, all stated here so that no hidden
+mathematical hypothesis is introduced.
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.10\textwidth}
+                  >{\raggedright\arraybackslash}p{0.82\textwidth}}
+\toprule
+Label & Imported statement \\
+\midrule
+\endhead
+(F1) & A locally compact Hausdorff space is regular.  If $x\in U$ with $U$ open, there is
+$u\in\Cc(X,[0,1])$ with $u(x)=1$ and $\supp u\subseteq U$.  Compact subsets have compact
+neighbourhoods. \\
+(F2) & Every locally compact Hausdorff group has a nonzero left Haar measure, unique up
+to a positive scalar.  Haar measure is Radon, finite on compact sets, positive on nonempty
+open sets, and has full support.  On an abelian group it is also right invariant and
+invariant under inversion. \\
+(F3) & Tonelli, Fubini, dominated convergence, monotone convergence, change of variables
+under a measure-preserving homeomorphism, density of $\Cc(G)$ in $\Lp p(G)$ for
+$1\leq p<\infty$, H\"older, and the Riesz representation theorem for Hilbert spaces. \\
+(F4) & Riesz--Markov: positive linear functionals on $\Cc(X)$ that are locally bounded
+are represented by unique Radon measures.  Finite complex Radon measures are the dual of
+$\Czero(X)$; their total variation is regular. \\
+(F5) & Tychonoff's theorem and the Arzel\`a--Ascoli theorem in compact--open form:
+a closed, pointwise relatively compact, equicontinuous family of continuous maps is
+compact on a locally compact domain. \\
+(F6) & Banach--Alaoglu for dual balls; Krein--Milman for compact convex subsets of a
+locally convex space; Stone--Weierstrass for self-adjoint, point-separating subalgebras of
+$\Czero(X)$ that vanish nowhere. \\
+(F7) & The standard construction of quotient topological groups by closed normal
+subgroups, and completion of a positive semidefinite sesquilinear space to a Hilbert
+space. \\
+(F8) & Unitization and the spectral-radius bound for Banach algebras, and the spectral
+theorem (equivalently, continuous functional calculus and spectral projections) for
+bounded normal operators on a complex Hilbert space. \\
+\bottomrule
+\end{longtable}
+
+The current library contains the principal ingredients of (F1)--(F8), though some glue
+lemmas in exactly the stated generality may need to be added.  In particular, the proof
+must not replace nets by sequences or invoke an $\Lp1$ duality theorem with an unstated
+$\sigma$-finiteness assumption.
+
+\subsection{Fourier conventions}
+\label{subsec:conventions}
+
+Fix a Haar measure $\mu_G$ on $G$.  For $a\in G$ set
+\[
+  (L_a f)(x)=f(a^{-1}x),\qquad
+  f^*(x)=\overline{f(x^{-1})},\qquad
+  (f*g)(x)=\int_G f(y)g(y^{-1}x)\,d\mu_G(y).
+\]
+For $f\in\Lp1(G)$ define
+\begin{equation}
+  \widehat f(\chi)=\int_G f(x)\overline{\chi(x)}\,d\mu_G(x).
+  \label{eq:fourier-convention}
+\end{equation}
+For a finite complex measure $\sigma$ on $\dual G$, define its inverse
+Fourier--Stieltjes transform by
+\begin{equation}
+  \check\sigma(x)=\int_{\dual G}\chi(x)\,d\sigma(\chi).
+  \label{eq:FS-convention}
+\end{equation}
+Thus the desired inversion formula is
+\begin{equation}
+  f(x)=\int_{\dual G}\widehat f(\chi)\chi(x)\,d\mu_{\dual G}(\chi).
+  \label{eq:desired-inversion}
+\end{equation}
+These conventions give
+\begin{align}
+  \widehat{f*g}&=\widehat f\,\widehat g,
+  &\widehat{f^*}&=\overline{\widehat f},
+  &\widehat{L_a f}(\chi)&=\overline{\chi(a)}\,\widehat f(\chi).
+  \label{eq:fourier-identities}
+\end{align}
+All later conjugations and inverses are fixed by these three identities.
+
+\section{The circle and the compact--open character group}
+\label{sec:compact-open}
+
+\subsection{Small arcs and the no-small-subgroups lemma}
+
+For $0<r<\pi$ put
+\[
+  A_r=\set{z\in\T:\abs{\argu z}<r},
+\]
+where $\argu z\in(-\pi,\pi]$ is the principal argument.
+
+\begin{lemma}[No small subgroups]
+\label{lem:nss-circle}
+If $z^n\in A_{\pi/2}$ for every $n\in\Z$, then $z=1$.  Consequently the only subgroup
+of $\T$ contained in $A_{\pi/2}$ is the trivial subgroup.
+\end{lemma}
+
+\begin{proof}
+Write $z=e^{i\theta}$ with $\theta\in(-\pi,\pi]$.  If $\theta\neq0$, put
+$t=\abs\theta\in(0,\pi]$ and take
+$n=\lceil\pi/(2t)\rceil$.  If $t>\pi/2$, then $n=1$; if $t\leq\pi/2$, then
+\[
+  \frac\pi2\leq nt<\frac\pi2+t\leq\pi.
+\]
+In either case $nt\in[\pi/2,\pi]$.  Therefore the principal argument of $z^n$ has
+absolute value at least $\pi/2$, contradicting $z^n\in A_{\pi/2}$.  Hence $\theta=0$.
+In \mathlib this is packaged as
+\path{Circle.eq_one_of_forall_pow_mem_centeredArc_pi_div_two}.
+\end{proof}
+
+The following quantitative form is what compactness and equicontinuity arguments use.
+
+\begin{lemma}[Power control]
+\label{lem:power-control}
+Let $W$ be a neighbourhood of $1$ in $\T$.  There is $m\geq1$ such that, for every
+$z\in\T$,
+\[
+  z,z^2,\ldots,z^m\in \overline{A_{\pi/4}}
+  \quad\Longrightarrow\quad z\in W.
+\]
+\end{lemma}
+
+\begin{proof}
+If not, for every $m$ choose $z_m\notin W$ whose first $m$ powers lie in the closed arc.
+Compactness of $\T$ gives a convergent subnet $z_m\to z\notin W$ after first replacing
+$W$ by a neighbourhood with closed closure contained in the original $W$.  For each
+fixed $n$, eventually $m\geq n$, so $z_m^n\in\overline{A_{\pi/4}}$ and hence
+$z^n\in\overline{A_{\pi/4}}\subset A_{\pi/2}$.  The same holds for negative powers.
+\Cref{lem:nss-circle} gives $z=1$, contradicting $z\notin W$.
+\end{proof}
+
+\begin{formalization}
+The local-compactness instance in the current source uses the explicit basis
+$A_{\pi/2^{n+1}}$ and a one-step square-root lemma instead of
+\cref{lem:power-control}.  Reusing that exact basis will substantially shorten Lean proofs.
+\end{formalization}
+
+\subsection{The compact--open topology}
+
+For compact $K\subseteq G$ and open $U\subseteq\T$ write
+\[
+  [K,U]=\set{f\in C(G,\T):f(K)\subseteq U}.
+\]
+The compact--open topology on $C(G,\T)$ is generated by these sets, and $\dual G$ has
+the induced topology.  At the trivial character it is enough to take sets $[K,U]$ with
+$U$ a neighbourhood of $1$.
+
+\begin{lemma}[Neighbourhood basis]
+\label{lem:dual-neighbourhood-basis}
+The sets
+\[
+  W(K,U)=\set{\chi\in\dual G:\chi(K)\subseteq U},
+\]
+where $K$ is compact and $U$ is a neighbourhood of $1$ in $\T$, form a neighbourhood
+basis at $1\in\dual G$.
+\end{lemma}
+
+\begin{proof}
+A basic neighbourhood of the constant map $1$ is a finite intersection
+$\bigcap_j[K_j,U_j]$.  Put $K=\bigcup_jK_j$ and choose a neighbourhood
+$U\subseteq\bigcap_jU_j$ of $1$.  Then $W(K,U)$ is contained in the intersection.
+Conversely each $W(K,U)$ is the intersection of $\dual G$ with a subbasic compact--open
+set, hence is open in $\dual G$.
+\end{proof}
+
+\begin{proposition}[Joint evaluation]
+\label{prop:joint-evaluation}
+If $G$ is locally compact Hausdorff, then
+\[
+  \ev:\dual G\times G\longrightarrow\T,\qquad(\chi,x)\longmapsto\chi(x)
+\]
+is continuous.
+\end{proposition}
+
+\begin{proof}
+Fix $(\chi_0,x_0)$ and a neighbourhood $O$ of $\chi_0(x_0)$.  Choose a symmetric
+neighbourhood $V$ of $1$ with $VV\chi_0(x_0)\subseteq O$.  By continuity of $\chi_0$,
+there is a neighbourhood $N$ of $x_0$ on which
+$\chi_0(x)\chi_0(x_0)^{-1}\in V$.  By local compactness shrink $N$ so that its closure
+$K$ is compact.  If $\chi\chi_0^{-1}\in W(K,V)$ and $x\in N$, then
+\[
+  \chi(x)\chi_0(x_0)^{-1}
+  =(\chi\chi_0^{-1})(x)\,
+    \chi_0(x)\chi_0(x_0)^{-1}\in VV.
+\]
+Thus $W(K,V)\chi_0\times N$ is mapped into $O$.
+\end{proof}
+
+\begin{formalization}
+This is already abstracted by the \texttt{ContinuousEval} instance for continuous
+monoid homomorphisms under \texttt{LocallyCompactPair}.  Currying uses the existing
+lemma \texttt{continuous\_of\_continuous\_uncurry} in the
+\texttt{ContinuousMonoidHom} namespace.
+\end{formalization}
+
+\subsection{The dual is again locally compact abelian}
+
+\begin{theorem}
+\label{thm:dual-lca}
+If $G$ is an LCA group, then $\dual G$, with pointwise multiplication and the
+compact--open topology, is an LCA group.
+\end{theorem}
+
+\begin{proof}
+Pointwise multiplication and inversion preserve characters.  Their continuity follows
+from the induced compact--open topology and continuity of the corresponding pointwise
+operations on $C(G,\T)$.  Since $\T$ is Hausdorff and two distinct characters differ at
+some point, the compact--open function space, and hence $\dual G$, is Hausdorff.
+
+It remains to prove local compactness.  Choose a compact neighbourhood $K$ of $1$ in
+$G$ and an arc $A_r$ whose closure is contained in $A_{\pi/4}$.  Let
+\[
+  E=\set{\chi\in\dual G:\chi(K)\subseteq\overline{A_r}}.
+\]
+This family is closed in $\dual G$ and pointwise relatively compact because $\T$ is
+compact.  It is equicontinuous at $1$.  Indeed, given a neighbourhood $W$ of $1$ in
+$\T$, take $m$ from \cref{lem:power-control}.  Choose a neighbourhood $V$ of $1$ in
+$G$ such that $V^j\subseteq K$ for $1\leq j\leq m$.  For $v\in V$ and $\chi\in E$,
+all powers $\chi(v)^j=\chi(v^j)$ lie in $\overline{A_r}$, so $\chi(v)\in W$.
+Translation and the homomorphism identity turn equicontinuity at $1$ into
+equicontinuity everywhere.  Arzel\`a--Ascoli now makes $E$ compact.  Finally
+$W(K,A_r)$ is an open neighbourhood of $1$ whose closure is contained in $E$.
+Thus $\dual G$ has a compact neighbourhood of its identity.
+\end{proof}
+
+\begin{formalization}
+The theorem is already an instance.  Its proof in v4.32.0 invokes
+\texttt{ContinuousMonoidHom.locallyCompactSpace\_of\_hasBasis} with the centred arcs
+$A_{\pi/2^{n+1}}$; it ultimately uses Arzel\`a--Ascoli.  The argument above records the
+mathematical invariants that must remain visible if that implementation is refactored.
+\end{formalization}
+
+\begin{proposition}[Compact/discrete directions]
+\label{prop:compact-discrete-basic}
+\begin{enumerate}[label=(\alph*)]
+\item If $G$ is discrete, then $\dual G$ is compact.
+\item If $G$ is compact, then $\dual G$ is discrete.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+If $G$ is discrete, every homomorphism $G\to\T$ is continuous.  The set of
+homomorphisms is closed in the compact product $\T^G$, because the equations
+$f(1)=1$ and $f(xy)=f(x)f(y)$ are closed conditions.  Compact subsets of a discrete
+space are finite, so the product and compact--open topologies agree on this closed set.
+
+If $G$ is compact, $W(G,A_{\pi/2})$ contains only the trivial character: the image of
+any character in this set is a subgroup of $\T$ contained in $A_{\pi/2}$, hence is
+trivial by \cref{lem:nss-circle}.  The singleton $\{1\}$ is therefore open, and
+translations show that every singleton is open.
+\end{proof}
+
+\section{Functoriality and the evaluation morphism}
+\label{sec:evaluation}
+
+For a continuous homomorphism $f:G\to H$, define
+\[
+  \dual f:\dual H\longrightarrow\dual G,
+  \qquad (\dual f)(\chi)=\chi\circ f.
+\]
+Continuity follows from continuity of precomposition in the compact--open topology.
+Direct evaluation proves
+\[
+  \dual{\id_G}=\id_{\dual G},\qquad
+  \dual{(g\circ f)}=(\dual f)\circ(\dual g).
+\]
+This is exactly \texttt{PontryaginDual.map} and \texttt{map\_comp}.
+
+\begin{proposition}[Evaluation morphism]
+\label{prop:evaluation-map}
+For an LCA group $G$, the formula
+\[
+  \alpha_G(x)(\chi)=\chi(x)
+\]
+defines a continuous homomorphism $\alpha_G:G\to\bidual G$.
+\end{proposition}
+
+\begin{proof}
+For fixed $x$, evaluation is multiplicative in $\chi$, so $\alpha_G(x)$ is a group
+homomorphism.  It is continuous by continuity of point evaluation on the compact--open
+space.  The identity
+$\alpha_G(xy)(\chi)=\chi(xy)=\chi(x)\chi(y)$ makes $\alpha_G$ a homomorphism.
+Finally the uncurried map $(x,\chi)\mapsto\chi(x)$ is continuous by
+\cref{prop:joint-evaluation}; the compact--open exponential law, in the precise form
+\texttt{continuous\_of\_continuous\_uncurry}, says that its curry $\alpha_G$ is
+continuous.
+\end{proof}
+
+\begin{proposition}[Naturality and the triangle identity]
+\label{prop:naturality}
+For every continuous homomorphism $f:G\to H$,
+\begin{equation}
+  \bidual f\circ\alpha_G=\alpha_H\circ f.
+  \label{eq:naturality}
+\end{equation}
+Moreover
+\begin{equation}
+  (\dual{\alpha_G})\circ\alpha_{\dual G}=\id_{\dual G}.
+  \label{eq:triangle}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+For $x\in G$ and $\psi\in\dual H$,
+\[
+ (\bidual f(\alpha_G(x)))(\psi)
+ =\alpha_G(x)(\psi\circ f)=\psi(f(x))=\alpha_H(f(x))(\psi).
+\]
+For $\chi\in\dual G$ and $x\in G$,
+\[
+ ((\dual{\alpha_G})(\alpha_{\dual G}(\chi)))(x)
+ =\alpha_{\dual G}(\chi)(\alpha_G(x))=\alpha_G(x)(\chi)=\chi(x).
+\]
+Extensionality of continuous homomorphisms proves both identities.
+\end{proof}
+
+\section{Haar measure, convolution, and approximate identities}
+\label{sec:haar-convolution}
+
+Fix an LCA group $G$ and a nonzero Haar measure $\mu_G$.  Commutativity implies that
+left translation, right translation, and inversion preserve $\mu_G$.
+
+\begin{lemma}[Normalized compactly supported bumps]
+\label{lem:normalized-bump}
+For every identity neighbourhood $U$ there is $h_U\in\Cc(G)$ such that
+\[
+  h_U\geq0,\qquad \supp h_U\subseteq U,\qquad
+  \int_Gh_U\,d\mu_G=1.
+\]
+The support may be required to lie in any prescribed relatively compact identity
+neighbourhood contained in $U$.
+\end{lemma}
+
+\begin{proof}
+Choose a nonempty open set $V$ with compact closure contained in $U$.  By (F1), choose
+a nonzero $u\in\Cc(G,[0,1])$ supported in $U$ and positive at a point of $V$.
+Continuity makes $u$ positive on a nonempty open set, so full support of Haar measure
+gives $0<\int u<\infty$.  Put $h_U=u/(\int u)$.
+\end{proof}
+
+Order the identity neighbourhoods by reverse inclusion and make one choice $h_U$ for
+each $U$.  This is the approximate identity used below.
+
+\begin{lemma}[Continuity of translation]
+\label{lem:translation-continuity}
+For $1\leq p<\infty$ and $f\in\Lp p(G)$,
+\[
+  \norm{L_af-f}_p\longrightarrow0\qquad(a\to1).
+\]
+Consequently $a\mapsto L_af$ is continuous from $G$ to $\Lp p(G)$.
+\end{lemma}
+
+\begin{proof}
+First take $f\in\Cc(G)$.  For $a$ in a fixed compact neighbourhood of $1$, all
+$L_af-f$ have support in one compact set.  Uniform continuity of $f$ on a slightly
+larger compact set gives $\norm{L_af-f}_\infty\to0$, and multiplication by the finite
+measure of the common support gives convergence in $\Lp p$.  For general $f$, choose
+$g\in\Cc(G)$ with $\norm{f-g}_p<\varepsilon$ and use the isometry of translation:
+\[
+ \norm{L_af-f}_p
+ \leq 2\norm{f-g}_p+\norm{L_ag-g}_p.
+\]
+Continuity at an arbitrary $a_0$ follows after translating by $a_0^{-1}$.
+\end{proof}
+
+\begin{proposition}[Approximate identity]
+\label{prop:approximate-identity}
+For $f\in\Lp p(G)$, $1\leq p<\infty$,
+\[
+  h_U*f\longrightarrow f\quad\text{in }\Lp p(G)
+\]
+as $U$ shrinks to $\{1\}$.  If $f$ is continuous, convergence is uniform on each
+compact set.  In particular, for every compact $K\subseteq\dual G$,
+\begin{equation}
+  \widehat{h_U}\longrightarrow1
+  \quad\text{uniformly on }K.
+  \label{eq:approx-fourier}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Minkowski's integral inequality and \cref{lem:translation-continuity} give
+\[
+ \norm{h_U*f-f}_p
+ \leq\int_Uh_U(y)\norm{L_yf-f}_p\,d\mu_G(y),
+\]
+which is at most $\varepsilon$ once $U$ is small enough.  If $f$ is continuous, the same
+estimate with the supremum over a fixed compact set uses uniform continuity on a compact
+enlargement of that set.
+
+For \eqref{eq:approx-fourier}, joint evaluation
+$(y,\chi)\mapsto\chi(y)$ is uniformly continuous on $C\times K$, where $C$ is a fixed
+compact neighbourhood containing all sufficiently small $U$.  Hence
+\[
+ \sup_{\chi\in K}\abs{\widehat{h_U}(\chi)-1}
+ \leq \sup_{\substack{y\in U\\\chi\in K}}
+       \abs{\overline{\chi(y)}-1}\longrightarrow0.
+\]
+\end{proof}
+
+\begin{proposition}[The convolution Banach $*$-algebra]
+\label{prop:l1-banach-algebra}
+The formulas in \cref{subsec:conventions} make $\Lp1(G)$ a commutative Banach
+$*$-algebra, possibly without a unit.  More precisely,
+\begin{align*}
+ \norm{f*g}_1&\leq\norm f_1\norm g_1,&
+ (f*g)*h&=f*(g*h),& f*g&=g*f,\\
+ (f*g)^*&=g^**f^*,& \norm{f^*}_1&=\norm f_1.
+\end{align*}
+Moreover, if $f,g\in\Lp2(G)$, then $f*g$ has a continuous bounded representative and
+\begin{equation}
+  \norm{f*g}_\infty\leq\norm f_2\norm g_2.
+  \label{eq:l2-convolution-bound}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Tonelli gives
+\[
+ \int_G\abs{(f*g)(x)}\,dx
+ \leq\int_G\int_G\abs{f(y)}\abs{g(y^{-1}x)}\,dy\,dx
+ =\norm f_1\norm g_1.
+\]
+Fubini and the substitutions permitted by Haar invariance prove associativity,
+commutativity, and the involution identity.  Completeness is completeness of $\Lp1$.
+For $f,g\in\Lp2$, Cauchy--Schwarz gives \eqref{eq:l2-convolution-bound}.  If $x_i\to x$,
+the difference is bounded by $\norm{L_{x_i^{-1}x}f-f}_2\norm g_2$, which tends to zero
+by \cref{lem:translation-continuity}.
+\end{proof}
+
+\begin{lemma}[Positive-type kernels from convolution]
+\label{lem:convolution-positive-type}
+If $g\in\Lp2(G)$, then $g*g^*$ has a continuous bounded representative and is of
+positive type in the sense of \cref{def:positive-type} below.  If $g\in\Cc(G)$, then
+\[
+  \supp(g*g^*)\subseteq(\supp g)(\supp g)^{-1}.
+\]
+\end{lemma}
+
+\begin{proof}
+Continuity and boundedness follow from \cref{prop:l1-banach-algebra}.  For
+$x_1,\ldots,x_n\in G$ and $c_1,\ldots,c_n\in\C$, a change of variables gives
+\[
+ \sum_{i,j}c_i\overline{c_j}(g*g^*)(x_i^{-1}x_j)
+ =\int_G\abs{\sum_i c_i g(x_i^{-1}y)}^2\,dy\geq0.
+\]
+The support assertion follows directly from the convolution integral.
+\end{proof}
+
+\section{The Fourier algebra and the spectrum of $\Lp1(G)$}
+\label{sec:l1-spectrum}
+
+\subsection{Elementary Fourier analysis}
+
+\begin{proposition}[Fourier transform into $\Czero$]
+\label{prop:riemann-lebesgue}
+For $f\in\Lp1(G)$, the function $\widehat f$ of
+\eqref{eq:fourier-convention} belongs to $\Czero(\dual G)$ and
+\[
+  \norm{\widehat f}_\infty\leq\norm f_1.
+\]
+The identities \eqref{eq:fourier-identities} hold.
+\end{proposition}
+
+\begin{proof}
+The norm bound is immediate.  If $\chi_i\to\chi$ uniformly on compact sets, choose a
+compact $K\subseteq G$ with $\int_{K^c}\abs f<\varepsilon$.  Uniform convergence on
+$K$ and the bound $\abs{\chi_i-\chi}\leq2$ show
+\[
+ \abs{\widehat f(\chi_i)-\widehat f(\chi)}
+ \leq\int_K\abs f\abs{\chi_i-\chi}+2\varepsilon\longrightarrow2\varepsilon.
+\]
+Thus $\widehat f$ is continuous.
+
+We prove vanishing at infinity first for $f\in\Cc(G)$.  Let
+$\delta=\inf\{\abs{1-z}:z\notin A_{\pi/4}\}>0$.  By
+\cref{lem:translation-continuity}, choose a relatively compact identity neighbourhood
+$U$ so that $\norm{L_yf-f}_1<\delta\varepsilon$ for $y\in U$.  The polar family
+\[
+ K_U=\set{\chi:\chi(\overline U)\subseteq\overline{A_{\pi/4}}}
+\]
+is compact by the Arzel\`a--Ascoli argument in \cref{thm:dual-lca}.  If
+$\chi\notin K_U$, choose $y\in\overline U$ with
+$\abs{1-\chi(y)}\geq\delta$.  The translation identity yields
+\[
+ \delta\abs{\widehat f(\chi)}
+ \leq\abs{1-\overline{\chi(y)}}\abs{\widehat f(\chi)}
+ =\abs{\widehat{L_yf-f}(\chi)}<\delta\varepsilon.
+\]
+After making the translation estimate on $\overline U$ by shrinking $U$, this proves
+$\abs{\widehat f}<\varepsilon$ outside a compact set.  Approximation of an arbitrary
+$f\in\Lp1$ by $\Cc(G)$, together with the norm bound, proves the general case.
+
+Finally, Fubini, Haar invariance, and the substitutions $x=ay$ or $x=y^{-1}$ prove the
+three identities in \eqref{eq:fourier-identities}.
+\end{proof}
+
+\begin{formalization}
+The only delicate point in this proof is keeping $\overline U$ inside the region on which
+translation is uniformly small.  One convenient Lean statement chooses a compact
+neighbourhood $C$ first, proves uniform smallness on some closed $U\subseteq C$, and
+defines $K_U$ using that closed $U$.
+\end{formalization}
+
+Let $\Delta(\Lp1(G))$ denote the set of nonzero complex-linear multiplicative maps
+$\Lambda:\Lp1(G)\to\C$, with the Gelfand topology (pointwise convergence on
+$\Lp1(G)$).  Although $\Lp1(G)$ need not be unital, every such map is continuous:
+extend it to the unitization by $\widetilde\Lambda(f,c)=\Lambda(f)+c$.  If
+$\lambda=\widetilde\Lambda(b)$, then $b-\lambda1$ cannot be invertible, so
+$\abs\lambda\leq r(b)\leq\norm b$.  Restriction gives boundedness of $\Lambda$.
+
+\begin{theorem}[Spectrum theorem]
+\label{thm:l1-spectrum}
+The map
+\[
+ \nu_G:\dual G\longrightarrow\Delta(\Lp1(G)),\qquad
+ \nu_G(\chi)(f)=\widehat f(\chi),
+\]
+is a homeomorphism.  In particular, the complex characters of the convolution algebra
+$\Lp1(G)$ are exactly integration against conjugate group characters.
+\end{theorem}
+
+\begin{proof}
+The convolution identity makes $\nu_G(\chi)$ multiplicative.  It is nonzero: take a
+nonnegative $u\in\Cc(G)$ with nonzero integral and put $f=u\chi$ (using the coercion
+$\T\subset\C$); then $\widehat f(\chi)=\int u>0$.  If
+$\nu_G(\chi)=\nu_G(\eta)$, then
+$\int f(\overline\chi-\overline\eta)=0$ for all $f\in\Lp1$.  Testing against compactly
+supported functions shows $\chi=\eta$ almost everywhere, hence everywhere by
+continuity.  Thus $\nu_G$ is injective.
+
+Let $\Lambda\in\Delta(\Lp1(G))$.  Choose $f_0$ with $\Lambda(f_0)\neq0$ and define
+\[
+ q(a)=\frac{\Lambda(L_af_0)}{\Lambda(f_0)}.
+\]
+The identities
+\[
+ (L_af)*g=L_a(f*g)=f*(L_ag)
+\]
+and multiplicativity show, first for $f$ or $g$ on which $\Lambda$ is nonzero and then
+for all of $\Lp1$, that
+\begin{equation}
+  \Lambda(L_af)=q(a)\Lambda(f),\qquad q(ab)=q(a)q(b),\qquad q(1)=1.
+  \label{eq:spectrum-q}
+\end{equation}
+Continuity of translation in $\Lp1$ makes $q$ continuous.  It is bounded because
+$\abs{q(a)}\leq\norm\Lambda\norm{f_0}_1/\abs{\Lambda(f_0)}$.  A bounded homomorphism
+$G\to\C^\times$ has modulus one: for fixed $a$, boundedness of $q(a)^n$ and
+$q(a)^{-n}$ forces $\abs{q(a)}=1$.  Hence $q:G\to\T$ is a character.
+
+Bochner integration of the continuous map $a\mapsto f(a)L_ag$ in $\Lp1$ gives
+\[
+ f*g=\int_G f(a)L_ag\,da.
+\]
+Apply $\Lambda$, use \eqref{eq:spectrum-q}, and choose $g$ with
+$\Lambda(g)\neq0$:
+\[
+ \Lambda(f)\Lambda(g)=\Lambda(f*g)
+ =\Lambda(g)\int_Gf(a)q(a)\,da.
+\]
+Thus $\Lambda(f)=\int f q=\widehat f(\overline q)$, proving surjectivity.
+
+It remains to identify the topology.  Let the \emph{transform topology} on $\dual G$ be
+the weakest topology making all $\widehat f$, $f\in\Lp1(G)$, continuous.  It is the
+topology transported from the Gelfand spectrum.  By
+\cref{prop:riemann-lebesgue} it is no finer than the compact--open topology.
+
+We prove joint continuity of $(a,\chi)\mapsto\chi(a)$ when $\dual G$ has the transform
+topology.  For fixed $f$, the map
+\[
+  (a,\chi)\longmapsto\widehat{L_af}(\chi)
+\]
+is continuous: near $(a_0,\chi_0)$ split the difference into a term bounded by
+$\norm{L_af-L_{a_0}f}_1$ and a term controlled by the defining coordinate
+$\widehat{L_{a_0}f}$.  At $(a_0,\chi_0)$ choose $f_0$ with
+$\widehat f_0(\chi_0)\neq0$.  On a neighbourhood where the denominator stays nonzero,
+\[
+ \chi(a)=\overline{
+   \frac{\widehat{L_af_0}(\chi)}{\widehat f_0(\chi)}}
+\]
+is therefore continuous.  Given a compact $K\subseteq G$ and an identity neighbourhood
+$V\subseteq\T$, joint continuity supplies, for every $a\in K$, a neighbourhood $U_a$ of
+$a$ and a transform-open identity neighbourhood $N_a$ such that
+$\chi(U_a)\subseteq V$.  A finite subcover of $K$ shows that
+$\bigcap_aN_a\subseteq W(K,V)$.  By
+\cref{lem:dual-neighbourhood-basis}, every compact--open identity neighbourhood is a
+transform-topology neighbourhood.  The two topologies coincide, and $\nu_G$ is a
+homeomorphism.
+\end{proof}
+
+\subsection{Density and uniqueness}
+
+Put
+\[
+  \mathcal A(G)=\set{\widehat f:f\in\Lp1(G)}\subseteq\Czero(\dual G).
+\]
+
+\begin{proposition}[Density of Fourier transforms]
+\label{prop:fourier-dense}
+$\mathcal A(G)$ is uniformly dense in $\Czero(\dual G)$.
+\end{proposition}
+
+\begin{proof}
+It is a subalgebra because $\widehat{f*g}=\widehat f\widehat g$, and it is self-adjoint
+because $\widehat{f^*}=\overline{\widehat f}$.  It vanishes nowhere by the construction
+used in \cref{thm:l1-spectrum}.  It separates points: if
+$\widehat f(\chi)=\widehat f(\eta)$ for every $f$, then the spectrum theorem gives
+$\chi=\eta$.  The locally compact Stone--Weierstrass theorem (F6) proves the claim.
+\end{proof}
+
+\begin{theorem}[Fourier--Stieltjes uniqueness]
+\label{thm:FS-uniqueness}
+Let $\sigma$ be a finite complex Radon measure on $\dual G$.  If
+\[
+  \int_{\dual G}\chi(x)\,d\sigma(\chi)=0
+  \qquad\text{for every }x\in G,
+\]
+then $\sigma=0$.
+\end{theorem}
+
+\begin{proof}
+For $f\in\Lp1(G)$, Fubini gives
+\[
+ \int_{\dual G}\widehat f(\chi)\,d\sigma(\chi)
+ =\int_G f(x)\left(\int_{\dual G}\overline{\chi(x)}\,d\sigma(\chi)\right)dx=0,
+\]
+because the inner integral is the assumed transform at $x^{-1}$.  Thus $\sigma$
+annihilates $\mathcal A(G)$.  By \cref{prop:fourier-dense} it annihilates all of
+$\Czero(\dual G)$, and Riesz--Markov uniqueness gives $\sigma=0$.
+\end{proof}
+
+\begin{remark}
+\label{rem:noncircular-uniqueness}
+This theorem is deliberately asymmetric: measures live on $\dual G$, but the testing
+characters are only the evaluations $\chi\mapsto\chi(x)$ for $x\in G$.  Surjectivity of
+$G\to\bidual G$ has not been used.  This noncircular form is the decisive input in the
+final density argument for Pontryagin duality.
+\end{remark}
+
+\section{Positive-type functions and the GNS construction}
+\label{sec:positive-type}
+
+\begin{definition}[Positive type]
+\label{def:positive-type}
+A continuous function $\varphi:G\to\C$ is of \emph{positive type} if, for every
+$n\geq1$, $x_1,\ldots,x_n\in G$, and $c_1,\ldots,c_n\in\C$,
+\begin{equation}
+  \sum_{i,j=1}^n\overline{c_i}c_j\,
+     \varphi(x_i^{-1}x_j)\geq0.
+  \label{eq:positive-type-finite}
+\end{equation}
+The inequality means that the displayed complex number is real and nonnegative.
+Write $P(G)$ for the convex set of positive-type functions satisfying
+$\varphi(1)\leq1$.
+\end{definition}
+
+\begin{lemma}[Integral criterion]
+\label{lem:positive-integral-criterion}
+For a bounded continuous $\varphi$, condition
+\eqref{eq:positive-type-finite} is equivalent to
+\begin{equation}
+  \int_G\int_G \overline{f(x)}f(y)\varphi(x^{-1}y)
+       \,d\mu_G(x)d\mu_G(y)\geq0
+  \qquad(f\in\Cc(G)).
+  \label{eq:positive-type-integral}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Assume first the finite condition.  For fixed $f$, all variables lie in the compact set
+$K=\supp f$.  Approximate $f$ in $\Lp1$ by compactly supported simple functions and
+approximate the continuous kernel $(x,y)\mapsto\varphi(x^{-1}y)$ uniformly on
+$K\times K$ by a step kernel obtained from a finite measurable partition.  The resulting
+double integral is a limit of expressions
+\[
+  \sum_{i,j}\overline{d_i}d_j\varphi(t_i^{-1}t_j)
+\]
+with the cell measures absorbed into $d_i$ and $d_j$; these are nonnegative by
+\eqref{eq:positive-type-finite}.  The error is bounded by the uniform kernel error times
+$\norm f_1^2$, so the limit is nonnegative.
+
+Conversely, take a normalized bump $h_U$ from \cref{lem:normalized-bump} and apply
+\eqref{eq:positive-type-integral} to
+$f_U=\sum_i c_iL_{x_i}h_U$.  Expanding the integral gives a finite sum whose $(i,j)$
+entry is an average of $\varphi$ over a set shrinking to $x_i^{-1}x_j$.  Continuity of
+$\varphi$, compact support of $h_U$, and dominated convergence show that this entry
+tends to $\varphi(x_i^{-1}x_j)$.  Passing to the limit gives
+\eqref{eq:positive-type-finite}.
+\end{proof}
+
+\begin{lemma}[Elementary consequences]
+\label{lem:positive-type-elementary}
+If $\varphi$ is of positive type, then
+\[
+ \varphi(1)\in\R_{\geq0},\qquad
+ \varphi(x^{-1})=\overline{\varphi(x)},\qquad
+ \abs{\varphi(x)}\leq\varphi(1).
+\]
+In particular, $\varphi(1)=0$ implies $\varphi=0$, and the definition of $P(G)$ is
+equivalent to the bound $\norm\varphi_\infty\leq1$.
+\end{lemma}
+
+\begin{proof}
+The $1\times1$ matrix gives $\varphi(1)\geq0$.  The matrix associated to $1,x$ is
+positive semidefinite and therefore Hermitian, giving
+$\varphi(x^{-1})=\overline{\varphi(x)}$.  Its determinant is nonnegative:
+$\varphi(1)^2-\abs{\varphi(x)}^2\geq0$.  The remaining assertions follow.
+\end{proof}
+
+Every character $\chi\in\dual G$ belongs to $P(G)$, because
+\[
+ \sum_{i,j}\overline{c_i}c_j\chi(x_i^{-1}x_j)
+ =\abs{\sum_jc_j\chi(x_j)}^2.
+\]
+More generally, a positive finite measure $\sigma$ on $\dual G$ has
+$\check\sigma$ of positive type by integrating this square.
+
+\subsection{Construction of the cyclic representation}
+
+Let $\varphi$ be of positive type.  On $\Cc(G)$ define
+\begin{equation}
+ \angles{f,g}_\varphi
+ =\int_G\int_G\overline{f(x)}g(y)\varphi(x^{-1}y)\,dx\,dy.
+ \label{eq:gns-form}
+\end{equation}
+This is a positive semidefinite sesquilinear form, conjugate-linear in the first
+variable.  Cauchy--Schwarz follows by applying nonnegativity to
+$f+zg$ and minimizing over $z\in\C$.  Hence
+\[
+ N_\varphi=\set{f:\angles{f,f}_\varphi=0}
+\]
+is a linear subspace and the quotient $\Cc(G)/N_\varphi$ is an inner-product space.
+Let $H_\varphi$ be its Hilbert completion.
+
+\begin{proposition}[GNS representation]
+\label{prop:gns}
+There is a strongly continuous unitary representation
+\[
+ U^\varphi:G\longrightarrow\mathcal U(H_\varphi)
+\]
+and a cyclic vector $\xi_\varphi\in H_\varphi$ such that
+\begin{equation}
+  \varphi(a)=\angles{\xi_\varphi,U^\varphi_a\xi_\varphi}
+  \qquad(a\in G).
+  \label{eq:gns-coefficient}
+\end{equation}
+The linear span of $\{U^\varphi_a\xi_\varphi:a\in G\}$ is dense in $H_\varphi$.
+\end{proposition}
+
+\begin{proof}
+Define $U_a[f]=[L_af]$.  Haar invariance and a change of variables in
+\eqref{eq:gns-form} give
+$\angles{L_af,L_ag}_\varphi=\angles{f,g}_\varphi$, so this is well-defined and extends
+to a unitary operator on $H_\varphi$.  The translation identity gives
+$U_aU_b=U_{ab}$.  Also
+\begin{equation}
+  \norm{[f]}_\varphi^2
+  \leq\norm\varphi_\infty\norm f_1^2.
+  \label{eq:gns-l1-bound}
+\end{equation}
+Thus \cref{lem:translation-continuity} implies
+$\norm{U_a[f]-[f]}_\varphi\to0$ for the dense set of classes of $\Cc$ functions.
+Unitarity extends this to every vector, proving strong continuity.
+
+Define the conjugate-linear functional on $\Cc(G)$
+\[
+  \Phi(f)=\int_G\overline{f(x)}\varphi(x^{-1})\,dx.
+\]
+If $f\in N_\varphi$, Cauchy--Schwarz gives
+$\angles{f,h}_\varphi=0$ for all $h\in\Cc(G)$.  Put
+\[
+ F_f(y)=\int_G\overline{f(x)}\varphi(x^{-1}y)\,dx.
+\]
+This is continuous and $\angles{f,h}_\varphi=\int h(y)F_f(y)\,dy$.  Testing against all
+$h$ gives $F_f=0$, and in particular $\Phi(f)=F_f(1)=0$.  Thus $\Phi$ descends to the
+quotient.
+
+For the approximate identity $h_U$,
+\[
+ \Phi(f)=\lim_U\angles{f,h_U}_\varphi.
+\]
+Indeed, the right side averages the continuous function $F_f$ over a set shrinking to
+$1$.  Moreover, \eqref{eq:gns-l1-bound} and $\norm{h_U}_1=1$ give
+$\norm{[h_U]}_\varphi\leq\sqrt{\norm\varphi_\infty}$.  Therefore
+\[
+ \abs{\Phi(f)}\leq\sqrt{\norm\varphi_\infty}\norm{[f]}_\varphi.
+\]
+The functional extends continuously to $H_\varphi$.  By the Hilbert-space Riesz theorem
+there is a unique $\xi_\varphi$ such that
+$\Phi(f)=\angles{[f],\xi_\varphi}_\varphi$.
+
+Replacing $f$ by a translate, and using unitarity, gives for every $f\in\Cc(G)$
+\begin{equation}
+ \angles{[f],U_a\xi_\varphi}_\varphi
+ =\int_G\overline{f(y)}\varphi(y^{-1}a)\,dy.
+ \label{eq:gns-translate-vector}
+\end{equation}
+Indeed, this follows from
+$\angles{[f],U_a\xi}=\angles{U_{a^{-1}}[f],\xi}$ and the change of variables $y=ax$.
+Integrating \eqref{eq:gns-translate-vector} against $h(a)\,da$ shows, by comparison with
+\eqref{eq:gns-form}, that the Bochner integral
+\[
+  \int_G h(a)U_a\xi_\varphi\,da
+\]
+equals the vector $[h]$.  Therefore a vector orthogonal to every $U_a\xi_\varphi$ is
+orthogonal to every class $[h]$, hence is zero.  This proves cyclicity.  Finally,
+\[
+ \angles{\xi_\varphi,[h]}
+ =\overline{\Phi(h)}
+ =\int_Gh(a)\varphi(a)\,da,
+\]
+where \cref{lem:positive-type-elementary} was used in the last equality.  Comparing this
+with $[h]=\int h(a)U_a\xi_\varphi\,da$ shows that
+$a\mapsto\angles{\xi_\varphi,U_a\xi_\varphi}$ equals $\varphi(a)$ almost everywhere.
+The left side is continuous by strong continuity and the right side is continuous by
+hypothesis, so full support of Haar measure upgrades the equality to every $a$.
+\end{proof}
+
+\begin{remark}[Measurable positive-type functions]
+\label{rem:positive-continuous-rep}
+The same proof begins with an essentially bounded measurable function satisfying the
+integral positivity condition.  It produces the continuous representative
+$a\mapsto\angles{\xi,U_a\xi}$.  This fact is needed below to make the positive unit ball
+weak-$*$ closed without building continuity into a non-closed predicate.
+\end{remark}
+
+\subsection{Extreme points}
+
+\begin{lemma}[Extreme coefficient criterion]
+\label{lem:extreme-irreducible}
+Let $\varphi\in P(G)$ with $\varphi(1)=1$.  Then $\varphi$ is an extreme point of
+$P(G)$ if and only if its cyclic GNS representation is irreducible.
+\end{lemma}
+
+\begin{proof}
+Suppose first that $W\subseteq H_\varphi$ is a closed invariant subspace and let $P$ be
+its orthogonal projection.  Since the representation is unitary, $W^\perp$ is invariant
+and $P$ commutes with every $U_a$.  Put
+\begin{align*}
+ \varphi_1(a)&=\angles{P\xi,U_aP\xi},&
+ \varphi_2(a)&=\angles{(1-P)\xi,U_a(1-P)\xi}.
+\end{align*}
+Both are of positive type and $\varphi=\varphi_1+\varphi_2$.  If $\varphi$ is extreme,
+the elementary extreme-point criterion for the cone slice
+$\{\psi:\psi(1)\leq1\}$ says that
+$\varphi_1=\lambda\varphi$ for some $0\leq\lambda\leq1$.  Polarizing the equality of
+matrix coefficients after replacing $a$ by $b^{-1}a$ gives
+\[
+ \angles{U_b\xi,PU_a\xi}=\lambda\angles{U_b\xi,U_a\xi}.
+\]
+Cyclicity implies $P=\lambda I$.  Since $P$ is a projection, $\lambda\in\{0,1\}$;
+thus $W$ is trivial.
+
+Conversely, if the representation is reducible, take a nontrivial invariant $W$.  By
+cyclicity neither $P\xi$ nor $(1-P)\xi$ is zero.  After normalizing $\varphi_1$ and
+$\varphi_2$ by their positive values at $1$, the equality
+$\varphi=\varphi_1+\varphi_2$ becomes a nontrivial convex decomposition in $P(G)$.
+Hence $\varphi$ is not extreme.
+\end{proof}
+
+\begin{lemma}[Abelian Schur lemma]
+\label{lem:abelian-schur}
+Every irreducible strongly continuous unitary representation of an abelian group on a
+nonzero complex Hilbert space is one-dimensional.  It has the form
+$U_a=\chi(a)I$ for a unique $\chi\in\dual G$.
+\end{lemma}
+
+\begin{proof}
+For fixed $a$, the unitary $U_a$ commutes with every $U_b$.  Every spectral projection
+of the normal operator $U_a$ therefore commutes with the representation, so its range is
+invariant.  Irreducibility forces every spectral projection to be $0$ or $I$; the spectral
+measure is concentrated at one point, and $U_a=\chi(a)I$.  The representation law makes
+$\chi$ multiplicative, unitarity gives $\abs\chi=1$, and strong continuity gives
+continuity of $\chi$.  Since now every closed subspace is invariant, irreducibility forces
+the Hilbert space to have dimension one.
+\end{proof}
+
+\begin{theorem}[Extreme points of $P(G)$]
+\label{thm:extreme-characters}
+The extreme points of $P(G)$ are the zero function and the characters in $\dual G$.
+\end{theorem}
+
+\begin{proof}
+The zero function is extreme because a positive-type function vanishing at $1$ is zero.
+If a nonzero $\varphi\in P(G)$ is extreme, then necessarily $\varphi(1)=1$; otherwise
+\[
+ \varphi=\varphi(1)\frac{\varphi}{\varphi(1)}+(1-\varphi(1))0
+\]
+is a nontrivial convex decomposition.  By
+\cref{lem:extreme-irreducible,lem:abelian-schur}, its GNS representation is
+one-dimensional, say $U_a=\chi(a)I$.  Equation \eqref{eq:gns-coefficient} and
+$\norm\xi^2=\varphi(1)=1$ give $\varphi=\chi$.
+
+Conversely, the GNS space of a character is one-dimensional: in
+\eqref{eq:gns-form},
+\[
+ \norm{[f]}_\chi^2
+ =\abs{\int_Gf(x)\chi(x)\,dx}^2.
+\]
+It is irreducible, so the character is extreme by
+\cref{lem:extreme-irreducible}.
+\end{proof}
+
+\section{Bochner's theorem}
+\label{sec:bochner}
+
+We prove Bochner's theorem rather than use it as a disguised form of duality.  Regard an
+essentially bounded positive-type function as an element of
+$\Lp\infty(G)=\Lp1(G)^*$ with its weak-$*$ topology.
+
+\begin{lemma}[Weak-$*$ compact positive ball]
+\label{lem:P-weakstar-compact}
+The set $P(G)$, identified with its $\Lp\infty$ classes, is weak-$*$ compact and convex.
+\end{lemma}
+
+\begin{proof}
+For $f\in\Cc(G)$ put
+\[
+ k_f(t)=\int_G\overline{f(x)}f(xt)\,dx.
+\]
+Then $k_f\in\Lp1(G)$ and, by Fubini,
+\[
+ \int_G\int_G\overline{f(x)}f(y)\varphi(x^{-1}y)\,dx\,dy
+ =\int_G\varphi(t)k_f(t)\,dt.
+\]
+Thus integral positivity is the intersection, over $f\in\Cc(G)$, of weak-$*$ closed
+real half-spaces in the closed unit ball of $\Lp\infty$.  Banach--Alaoglu makes that
+intersection compact.  By \cref{rem:positive-continuous-rep}, every class in it has a
+unique continuous positive-type representative; uniqueness uses full support.  Hence it
+is precisely $P(G)$.  Convexity is immediate.
+\end{proof}
+
+\begin{theorem}[Bochner]
+\label{thm:bochner}
+A continuous function $\varphi:G\to\C$ is of positive type if and only if there is a
+unique finite positive Radon measure $\sigma$ on $\dual G$ such that
+\begin{equation}
+  \varphi(x)=\int_{\dual G}\chi(x)\,d\sigma(\chi).
+  \label{eq:bochner}
+\end{equation}
+Moreover $\sigma(\dual G)=\varphi(1)$.
+\end{theorem}
+
+\begin{proof}
+After dividing by $\varphi(1)$, it suffices to treat $P(G)$.  Let
+\[
+ \mathcal M=\set{\check\sigma:
+   \sigma\geq0,\ \sigma(\dual G)\leq1}\subseteq\Lp\infty(G).
+\]
+The positive unit ball of finite measures on $\dual G=\Czero(\dual G)^*$ is weak-$*$
+compact.  The map $\sigma\mapsto\check\sigma$ is continuous from that weak-$*$ topology
+to the weak-$*$ topology of $\Lp\infty(G)$.  Indeed, for $h\in\Lp1(G)$, Fubini writes
+\[
+ \int_Gh(x)\check\sigma(x)\,dx
+ =\int_{\dual G}\left(\int_Gh(x)\chi(x)\,dx\right)d\sigma(\chi),
+\]
+and the inner function of $\chi$ belongs to $\Czero(\dual G)$ by
+\cref{prop:riemann-lebesgue}.  Consequently $\mathcal M$ is compact, hence weak-$*$
+closed.  It is convex and contained in $P(G)$, since an integral of characters is of
+positive type.
+
+The set $\mathcal M$ contains $0$ and every character (use the Dirac measures).
+By \cref{thm:extreme-characters}, it contains every extreme point of $P(G)$.
+Krein--Milman says that $P(G)$ is the closed convex hull of its extreme points, so
+$P(G)\subseteq\mathcal M$.  Thus equality holds.  Uniqueness of $\sigma$ is
+\cref{thm:FS-uniqueness}, and evaluating \eqref{eq:bochner} at $1$ gives its total mass.
+\end{proof}
+
+\begin{formalization}
+The weak-$*$ closure proof should be carried out on $\Lp\infty$ equivalence classes; only
+after compactness is established should one choose the continuous GNS representative.
+This avoids attempting to prove that continuity is weak-$*$ closed.  The use of the
+spectral theorem in \cref{lem:abelian-schur} is generic Hilbert-space functional analysis
+and may be packaged as a separate Schur lemma.
+\end{formalization}
+
+\section{Construction of the dual Haar measure and Fourier inversion}
+\label{sec:inversion}
+
+Let
+\[
+ V(G)=\Span_\C P(G),\qquad V^1(G)=V(G)\cap\Lp1(G).
+\]
+By linearity of Bochner's theorem, for every $f\in V(G)$ there is a finite complex
+measure $\sigma_f$ on $\dual G$ such that
+\begin{equation}
+  f(x)=\int_{\dual G}\chi(x)\,d\sigma_f(\chi).
+  \label{eq:sigma-f}
+\end{equation}
+To see that this measure is independent of a presentation of $f$ as a linear combination
+of positive-type functions, subtract two candidate measures and apply
+\cref{thm:FS-uniqueness}.  Thus $f\mapsto\sigma_f$ is a well-defined linear map.  When
+$f$ is of positive type, $\sigma_f$ is positive.
+
+\subsection{A symmetric measure identity}
+
+\begin{lemma}
+\label{lem:symmetric-measure-identity}
+For $f,g\in V^1(G)$,
+\begin{equation}
+  \widehat g\,\sigma_f=\widehat f\,\sigma_g
+  \quad\text{as finite complex measures on }\dual G.
+  \label{eq:symmetric-measure-identity}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Both products are finite measures because Fourier transforms are bounded.  It suffices by
+\cref{thm:FS-uniqueness} to compare their inverse Fourier--Stieltjes transforms.  Fubini
+and \eqref{eq:sigma-f} give
+\begin{align*}
+ \int_{\dual G}\chi(x)\widehat g(\chi)\,d\sigma_f(\chi)
+ &=\int_Gg(y)
+    \left(\int_{\dual G}\chi(xy^{-1})\,d\sigma_f(\chi)\right)dy\\
+ &=\int_Gg(y)f(xy^{-1})\,dy=(g*f)(x).
+\end{align*}
+The other measure has transform $(f*g)(x)$, equal to this because $G$ is abelian.
+\end{proof}
+
+Choose the approximate identity $h_U$ of \cref{prop:approximate-identity} and put
+\begin{equation}
+  e_U=h_U*h_U^*.
+  \label{eq:positive-approx-identity}
+\end{equation}
+By \cref{lem:convolution-positive-type}, $e_U\in V^1(G)$ is of positive type, so
+$\sigma_{e_U}$ is positive.  Moreover
+\begin{equation}
+ \widehat{e_U}=\abs{\widehat{h_U}}^2\longrightarrow1
+ \quad\text{uniformly on compact subsets of }\dual G.
+ \label{eq:positive-approx-transform}
+\end{equation}
+
+\subsection{The auxiliary multiplier class}
+
+Define $\mathcal F$ to be the set of $u\in\Cb(\dual G)$ for which there exists a finite
+complex measure $\tau_u$ on $\dual G$ satisfying
+\begin{equation}
+  u\,\sigma_f=\widehat f\,\tau_u
+  \qquad\text{for every }f\in V^1(G).
+  \label{eq:F-defining}
+\end{equation}
+Products of a function and a measure mean multiplication of the measure by that bounded
+Borel function.
+
+\begin{lemma}[Multiplier calculus]
+\label{lem:multiplier-calculus}
+The class $\mathcal F$ has the following properties.
+\begin{enumerate}[label=(\roman*)]
+\item The measure $\tau_u$ is unique.  If $u\geq0$, then $\tau_u\geq0$.
+\item $\mathcal F$ is a $\Cb(\dual G)$-module, and
+\[
+ \tau_{u+v}=\tau_u+\tau_v,\quad
+ \tau_{cu}=c\tau_u,\quad
+ \tau_{au}=a\tau_u
+\]
+whenever the expressions make sense.
+\item For $\eta\in\dual G$, set
+$(T_\eta u)(\chi)=u(\eta^{-1}\chi)$ and let $T_\eta\tau$ be pushforward under
+$\chi\mapsto\eta\chi$.  Then
+$T_\eta u\in\mathcal F$ and $\tau_{T_\eta u}=T_\eta\tau_u$.
+\item If $g\in V^1(G)$, then $\widehat g\in\mathcal F$ and
+$\tau_{\widehat g}=\sigma_g$.
+\item $\Cc(\dual G)\subseteq\mathcal F$.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+Apply \eqref{eq:F-defining} with $f=e_U$.  For $a\in\Cc(\dual G)$,
+\begin{equation}
+ \int a\,d\tau_u
+ =\lim_U\int a\widehat{e_U}\,d\tau_u
+ =\lim_U\int au\,d\sigma_{e_U}.
+ \label{eq:tau-recovery}
+\end{equation}
+The first limit follows from uniform convergence on $\supp a$.  The last expression is
+determined by $u$, proving uniqueness.  If $u\geq0$ and $a\geq0$, it is nonnegative
+because $\sigma_{e_U}$ is positive; Riesz--Markov then gives $\tau_u\geq0$.
+
+Linearity follows immediately from \eqref{eq:F-defining} and uniqueness.  If
+$a\in\Cb(\dual G)$, multiply both sides of \eqref{eq:F-defining} by $a$ to obtain
+$(au)\sigma_f=\widehat f(a\tau_u)$; this proves the module assertion.
+
+For translation, define the modulation $(M_\eta f)(x)=\eta(x)f(x)$.  Directly from
+\eqref{eq:sigma-f} and \eqref{eq:fourier-convention},
+\begin{equation}
+ \sigma_{M_\eta f}=T_\eta\sigma_f,
+ \qquad \widehat{M_\eta f}=T_\eta\widehat f.
+ \label{eq:modulation-translation}
+\end{equation}
+Apply \eqref{eq:F-defining} to $M_{\eta^{-1}}f$ and push the resulting equality forward
+by $T_\eta$.  This gives
+$(T_\eta u)\sigma_f=\widehat f(T_\eta\tau_u)$.
+
+Assertion (iv) is exactly \cref{lem:symmetric-measure-identity}: for all $f$,
+$\widehat g\,\sigma_f=\widehat f\,\sigma_g$.
+
+Finally let $\gamma\in\Cc(\dual G)$ and $K=\supp\gamma$.  By
+\eqref{eq:positive-approx-transform}, choose $U$ with
+$\abs{\widehat{e_U}-1}<1/2$ on $K$.  Hence $\widehat{e_U}$ is nonzero on an open
+neighbourhood of $K$.  The function
+\[
+ a(\chi)=
+ \begin{cases}
+   \gamma(\chi)/\widehat{e_U}(\chi),&\widehat{e_U}(\chi)\neq0,\\
+   0,&\widehat{e_U}(\chi)=0
+ \end{cases}
+\]
+is continuous and compactly supported: near the zero set of $\widehat{e_U}$ it is zero
+because that set is disjoint from $K=\supp\gamma$.  Thus $a\in\Cb(\dual G)$ and
+$\gamma=a\widehat{e_U}$.  Assertions (ii) and (iv) imply $\gamma\in\mathcal F$.
+\end{proof}
+
+\subsection{The dual measure}
+
+For $\gamma\in\Cc(\dual G)$ define
+\begin{equation}
+  \Lambda(\gamma)=\tau_\gamma(\dual G).
+  \label{eq:Lambda-dual-measure}
+\end{equation}
+This is well-defined by \cref{lem:multiplier-calculus}.
+
+\begin{proposition}[Dual Haar measure]
+\label{prop:dual-haar-measure}
+$\Lambda$ is a nonzero positive translation-invariant linear functional on
+$\Cc(\dual G)$.  Therefore there is a nonzero Haar measure $\mu_{\dual G}$ such that
+\begin{equation}
+  \Lambda(\gamma)=\int_{\dual G}\gamma(\chi)\,d\mu_{\dual G}(\chi)
+  \qquad(\gamma\in\Cc(\dual G)).
+  \label{eq:dual-haar-riesz}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Linearity and positivity follow from parts (i)--(ii) of
+\cref{lem:multiplier-calculus}.  A positive functional on $\Cc$ is locally bounded:
+if $K$ is compact, choose $b\in\Cc$, $b\geq1$ on $K$; decomposing a complex
+$\gamma$ supported in $K$ into four nonnegative parts bounds
+$\abs{\Lambda(\gamma)}$ by a fixed multiple of
+$\norm\gamma_\infty\Lambda(b)$.  Riesz--Markov therefore supplies a positive Radon
+measure satisfying \eqref{eq:dual-haar-riesz}.
+
+It is nonzero.  Choose nonzero $g\in\Cc(G)$ and put $f=g*g^*$.  Then $f$ is nonzero,
+integrable, and of positive type, so $\sigma_f$ is a nonzero positive measure.  Choose
+$a\in\Cc(\dual G)$, $a\geq0$, with $\int a\,d\sigma_f>0$.  Since
+$\widehat f\in\mathcal F$ and $a\widehat f\in\Cc(\dual G)$,
+\[
+ \Lambda(a\widehat f)=\tau_{a\widehat f}(\dual G)
+ =\int a\,d\sigma_f>0.
+\]
+
+For $\eta\in\dual G$, part (iii) of \cref{lem:multiplier-calculus} gives
+$\Lambda(T_\eta\gamma)=(T_\eta\tau_\gamma)(\dual G)=\Lambda(\gamma)$.  Thus the
+representing measure is translation invariant and nonzero, hence is Haar.
+\end{proof}
+
+\begin{theorem}[Fourier inversion on $V^1$]
+\label{thm:fourier-inversion-V}
+For every $f\in V^1(G)$,
+\begin{equation}
+  \sigma_f=\widehat f\,\mu_{\dual G},
+  \qquad \widehat f\in\Lp1(\dual G),
+  \qquad
+  f(x)=\int_{\dual G}\widehat f(\chi)\chi(x)\,d\mu_{\dual G}(\chi).
+  \label{eq:inversion-V}
+\end{equation}
+The Haar measure $\mu_{\dual G}$ is uniquely determined by this property.
+\end{theorem}
+
+\begin{proof}
+We first prove, for every $u\in\mathcal F$, that
+\begin{equation}
+  \tau_u=u\,\mu_{\dual G}.
+  \label{eq:tau-density}
+\end{equation}
+If $a\in\Cc(\dual G)$, then $au\in\Cc(\dual G)$ and the module identity gives
+\[
+ \int a(\chi)u(\chi)\,d\mu_{\dual G}(\chi)
+ =\Lambda(au)=\tau_{au}(\dual G)=\int a\,d\tau_u.
+\]
+Riesz--Markov uniqueness proves \eqref{eq:tau-density}.  Apply it to
+$u=\widehat f$, for which $\tau_u=\sigma_f$ by
+\cref{lem:multiplier-calculus}.  Since $\sigma_f$ is finite,
+$\widehat f\in\Lp1(\dual G)$, and substituting its density in
+\eqref{eq:sigma-f} proves inversion.
+
+If $\nu$ is another Haar measure with the same inversion property, then
+$\widehat f\,\nu=\sigma_f=\widehat f\,\mu_{\dual G}$ for every $f\in V^1$.  Given
+$a\in\Cc(\dual G)$, choose $e_U$ so that $\widehat{e_U}$ has no zero on
+$\supp a$.  Testing the measure equality for $e_U$ against
+$a/\widehat{e_U}$ gives $\int a\,d\nu=\int a\,d\mu_{\dual G}$.  Hence $\nu$ equals
+$\mu_{\dual G}$.
+\end{proof}
+
+\begin{corollary}[Positivity and scaling]
+\label{cor:dual-measure-scaling}
+If $f\in V^1(G)$ is of positive type, then $\widehat f\geq0$ everywhere.  If the original
+Haar measure is replaced by $c\mu_G$ with $c>0$, the dual Haar measure selected by
+\cref{thm:fourier-inversion-V} is replaced by $c^{-1}\mu_{\dual G}$.
+\end{corollary}
+
+\begin{proof}
+For positive-type $f$, the measure $\sigma_f=\widehat f\mu_{\dual G}$ is positive, so
+$\widehat f\geq0$ almost everywhere.  It is continuous and Haar measure has full
+support, so the inequality is pointwise.  Under scaling by $c$, the Fourier transform
+is multiplied by $c$; multiplying the dual measure by $c^{-1}$ leaves the inversion
+integral unchanged.  Uniqueness gives the assertion.
+\end{proof}
+
+\section{Plancherel theory and localized Fourier transforms}
+\label{sec:plancherel}
+
+The only purpose of the full $\Lp2$ theorem in the biduality proof is to manufacture a
+nonzero Fourier transform supported in a prescribed nonempty open set.  We nevertheless
+record the complete extension because it is a central part of the theory and fixes the
+normalization of dual Haar measure.
+
+\begin{theorem}[Parseval on the dense domain]
+\label{thm:parseval-dense}
+If $f\in\Lp1(G)\cap\Lp2(G)$, then $\widehat f\in\Lp2(\dual G)$ and
+\begin{equation}
+  \int_G\abs{f(x)}^2\,d\mu_G(x)
+  =\int_{\dual G}\abs{\widehat f(\chi)}^2\,d\mu_{\dual G}(\chi).
+  \label{eq:parseval-dense}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Set $k=f*f^*$.  By \cref{prop:l1-banach-algebra}, $k\in\Lp1(G)$ is continuous; by
+\cref{lem:convolution-positive-type}, it is of positive type.  Hence $k\in V^1(G)$.
+Furthermore
+\[
+  k(1)=\norm f_2^2,
+  \qquad \widehat k=\widehat f\,\widehat{f^*}=\abs{\widehat f}^2.
+\]
+Apply inversion \eqref{eq:inversion-V} to $k$ at $1$.
+\end{proof}
+
+\begin{lemma}[Density of the Fourier range]
+\label{lem:plancherel-range-dense}
+The image of $\Lp1(G)\cap\Lp2(G)$ under the Fourier transform is dense in
+$\Lp2(\dual G)$.
+\end{lemma}
+
+\begin{proof}
+Suppose $H\in\Lp2(\dual G)$ is orthogonal to the image.  Fix
+$f\in\Lp1(G)\cap\Lp2(G)$.  For every $x\in G$, the function
+$\chi\mapsto\chi(x)\widehat f(\chi)$ is the Fourier transform of
+$L_{x^{-1}}f$ and is again in the image.  Therefore
+\[
+  \int_{\dual G}\overline{H(\chi)}\widehat f(\chi)\chi(x)
+       \,d\mu_{\dual G}(\chi)=0
+  \qquad(x\in G).
+\]
+The density $\overline H\widehat f$ belongs to $\Lp1(\dual G)$ by Cauchy--Schwarz, so
+it defines a finite measure.  Fourier--Stieltjes uniqueness
+\cref{thm:FS-uniqueness} gives
+\begin{equation}
+  \overline H\widehat f=0\quad\text{almost everywhere}
+  \qquad\text{for every }f\in\Lp1\cap\Lp2.
+  \label{eq:H-times-transform-zero}
+\end{equation}
+
+If $H$ were nonzero, regularity of the finite measure
+$\abs H^2\mu_{\dual G}$ would give a compact set $K$ on which
+$\int_K\abs H^2>0$.  Choose $e_U$ from
+\eqref{eq:positive-approx-identity} so that
+$\abs{\widehat{e_U}-1}<1/2$ on $K$.  Since
+$e_U\in\Cc(G)\subseteq\Lp1\cap\Lp2$, equation
+\eqref{eq:H-times-transform-zero} applied to $e_U$ contradicts the choice of $K$.
+Thus $H=0$, and the orthogonal complement of the image is trivial.
+\end{proof}
+
+\begin{theorem}[Plancherel]
+\label{thm:plancherel}
+The Fourier transform extends uniquely to a unitary operator
+\[
+  \mathcal P_G:\Lp2(G,\mu_G)\longrightarrow
+     \Lp2(\dual G,\mu_{\dual G}).
+\]
+For $f,g\in\Lp2(G)$,
+\begin{equation}
+  \int_G\overline{f(x)}g(x)\,dx
+  =\int_{\dual G}\overline{\mathcal P_Gf(\chi)}
+      \mathcal P_Gg(\chi)\,d\chi.
+  \label{eq:plancherel-inner-product}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+The space $\Lp1\cap\Lp2$ is dense in $\Lp2$, for instance because $\Cc(G)$ is dense.
+By \cref{thm:parseval-dense}, Fourier transform is an isometry there, so it extends
+uniquely to an isometry on $\Lp2$.  Its range is closed and is dense by
+\cref{lem:plancherel-range-dense}, hence is all of $\Lp2(\dual G)$.  Polarization gives
+\eqref{eq:plancherel-inner-product}.
+\end{proof}
+
+\begin{lemma}[$\Lp2$ product--convolution formula]
+\label{lem:l2-product-convolution}
+If $a,b\in\Lp2(G)$, then $ab\in\Lp1(G)$ and
+\begin{equation}
+  \widehat{ab}=(\mathcal P_Ga)*(\mathcal P_Gb),
+  \label{eq:l2-product-convolution}
+\end{equation}
+where the convolution on the right is the continuous bounded representative of the
+convolution of two $\Lp2(\dual G)$ functions.
+\end{lemma}
+
+\begin{proof}
+H\"older gives $ab\in\Lp1$.  Fix $\eta\in\dual G$ and put
+$d(x)=\overline{b(x)}\eta(x)$.  Then $d\in\Lp2(G)$ and a direct calculation on the dense
+domain $\Lp1\cap\Lp2$, followed by $\Lp2$ approximation, gives
+\[
+  (\mathcal P_Gb)(\chi^{-1}\eta)
+  =\overline{(\mathcal P_Gd)(\chi)}.
+\]
+Consequently Parseval yields
+\begin{align*}
+ ((\mathcal P_Ga)*(\mathcal P_Gb))(\eta)
+ &=\int_{\dual G}(\mathcal P_Ga)(\chi)
+      (\mathcal P_Gb)(\chi^{-1}\eta)\,d\chi\\
+ &=\int_{\dual G}(\mathcal P_Ga)(\chi)
+      \overline{(\mathcal P_Gd)(\chi)}\,d\chi\\
+ &=\int_Ga(x)\overline{d(x)}\,dx
+   =\int_Ga(x)b(x)\overline{\eta(x)}\,dx
+   =\widehat{ab}(\eta).
+\end{align*}
+Both sides have canonical continuous representatives, so the pointwise identity holds
+everywhere.
+\end{proof}
+
+\begin{proposition}[Fourier transform localized in an open set]
+\label{prop:localized-fourier}
+Let $U$ be a nonempty open subset of $\dual G$.  There exists
+$F\in\Lp1(G)$ such that $\widehat F$ is nonzero and
+\[
+  \supp(\widehat F)\subseteq U.
+\]
+\end{proposition}
+
+\begin{proof}
+Haar measure is positive on $U$ and inner regular, so choose compact
+$K\subseteq U$ with $0<\mu_{\dual G}(K)<\infty$.  Compactness of $K$ and continuity of
+multiplication give an identity neighbourhood $W$ with $WK\subseteq U$.  Choose a
+compact neighbourhood $B$ of $1$ contained in $W$; then
+$0<\mu_{\dual G}(B)<\infty$.  The indicator functions $\one_B,\one_K$ belong to
+$\Lp2(\dual G)$.  Their convolution
+\[
+  q=\one_B*\one_K
+\]
+has a continuous representative, is supported in the compact set $BK\subseteq U$, and
+is nonzero because
+\[
+  \int_{\dual G}q
+  =\mu_{\dual G}(B)\mu_{\dual G}(K)>0.
+\]
+By Plancherel choose $a,b\in\Lp2(G)$ whose transforms are $\one_B$ and $\one_K$.
+Then $F=ab\in\Lp1(G)$ and
+\cref{lem:l2-product-convolution} gives $\widehat F=q$.
+\end{proof}
+
+\begin{formalization}
+For indicator functions it is safest to choose compact measurable $B,K$ with positive
+finite measure and prove that the continuous convolution representative vanishes off
+$BK$.  The theorem is used once with the LCA group $\dual G$ and an open subset of
+$\bidual G$.
+\end{formalization}
+
+\section{Pontryagin biduality}
+\label{sec:biduality}
+
+We now prove that the continuous homomorphism $\alpha_G$ of
+\cref{prop:evaluation-map} is a topological isomorphism.  The proof is divided into four
+properties so that each can become an independent Lean theorem.
+
+\subsection{Characters separate points}
+
+\begin{proposition}[Injectivity]
+\label{prop:alpha-injective}
+$\alpha_G:G\to\bidual G$ is injective.
+\end{proposition}
+
+\begin{proof}
+Suppose $z\in G$ satisfies $\chi(z)=1$ for every $\chi\in\dual G$.  If $z\neq1$, choose
+an identity neighbourhood $U$ with $zU\cap U=\varnothing$.  Choose a relatively compact
+identity neighbourhood $V$ with $VV^{-1}\subseteq U$, and a nonzero
+$g\in\Cc(G)$ supported in $V$.  The function
+\[
+  f=\frac{g*g^*}{(g*g^*)(1)}
+\]
+is nonzero, belongs to $V^1(G)$, is of positive type, satisfies $f(1)=1$, and has support
+in $U$.
+
+Fourier inversion gives
+\[
+ f(z^{-1}x)=\int_{\dual G}\widehat f(\chi)
+       \chi(z)^{-1}\chi(x)\,d\chi=f(x)
+\]
+for every $x$.  Thus $L_zf=f$.  But $\supp(L_zf)=z\supp f\subseteq zU$ is disjoint from
+$\supp f\subseteq U$, impossible for a nonzero function.  Hence $z=1$.
+\end{proof}
+
+\begin{corollary}
+\label{cor:characters-separate}
+For $x\neq y$ in $G$, there is $\chi\in\dual G$ with $\chi(x)\neq\chi(y)$.
+\end{corollary}
+
+\begin{proof}
+Apply \cref{prop:alpha-injective} to $x^{-1}y\neq1$.
+\end{proof}
+
+\subsection{The original topology is recovered from characters}
+
+For compact $K\subseteq\dual G$ and an identity neighbourhood $V\subseteq\T$, put
+\[
+  K^{\triangleleft}_V
+  =\set{x\in G:\chi(x)\in V\text{ for every }\chi\in K}
+  =\alpha_G^{-1}(W(K,V)).
+\]
+
+\begin{proposition}[Topological embedding]
+\label{prop:alpha-embedding}
+The sets $K^{\triangleleft}_V$ form a neighbourhood basis at $1$ in $G$.  Consequently
+$\alpha_G$ is a homeomorphism from $G$ onto its image in $\bidual G$.
+\end{proposition}
+
+\begin{proof}
+Each $K^{\triangleleft}_V$ is a neighbourhood of $1$ because $\alpha_G$ is continuous.
+We prove cofinality in the other direction.  Let $U$ be an identity neighbourhood.
+As in \cref{prop:alpha-injective}, choose a continuous positive-type
+$f\in V^1(G)$ with
+\[
+  f(1)=1,\qquad \supp f\subseteq U.
+\]
+By \cref{cor:dual-measure-scaling,thm:fourier-inversion-V},
+$\widehat f\geq0$ and
+\[
+  1=f(1)=\int_{\dual G}\widehat f(\chi)\,d\chi.
+\]
+Choose $0<\varepsilon<1/3$.  Regularity of the finite measure
+$\widehat f\,\mu_{\dual G}$ gives a compact $K\subseteq\dual G$ such that
+\begin{equation}
+  \int_{K^c}\widehat f(\chi)\,d\chi<\varepsilon.
+  \label{eq:embedding-tail}
+\end{equation}
+Let $V=\set{z\in\T:\abs{z-1}<\varepsilon}$.  If
+$x\in K^{\triangleleft}_V$, inversion and \eqref{eq:embedding-tail} give
+\begin{align*}
+ \abs{f(x)-1}
+ &\leq\int_K\widehat f(\chi)\abs{\chi(x)-1}\,d\chi
+   +\int_{K^c}\widehat f(\chi)\abs{\chi(x)-1}\,d\chi\\
+ &<\varepsilon\int_K\widehat f+2\varepsilon<3\varepsilon<1.
+\end{align*}
+Thus $f(x)\neq0$, so $x\in\supp f\subseteq U$.  We have found
+$K^{\triangleleft}_V\subseteq U$, proving the basis assertion.  Since the subspace
+neighbourhoods of $1$ in $\alpha_G(G)$ are precisely the intersections with
+$W(K,V)$, the inverse of $\alpha_G$ on its image is continuous.
+\end{proof}
+
+\subsection{The image is closed}
+
+\begin{lemma}[Dense locally compact subspaces]
+\label{lem:dense-locally-compact-open}
+If $X$ is a dense locally compact subspace of a Hausdorff space $Y$, then $X$ is open in
+$Y$.
+\end{lemma}
+
+\begin{proof}
+Fix $x\in X$.  Choose a compact neighbourhood $K$ of $x$ in $X$ and a relatively open
+set $V\subseteq X$ with $x\in V\subseteq K$.  Write $V=X\cap O$ for an open
+$O\subseteq Y$.  The set $K$ is compact in $Y$, hence closed.  If $O\setminus K$ were
+nonempty, it would be a nonempty open subset of $Y$ and would meet the dense set $X$.
+But
+\[
+  X\cap(O\setminus K)=V\setminus K=\varnothing,
+\]
+a contradiction.  Hence $x\in O\subseteq K\subseteq X$, so $X$ is open.
+\end{proof}
+
+\begin{proposition}[Closed image]
+\label{prop:alpha-closed}
+The subgroup $\alpha_G(G)$ is closed in $\bidual G$.
+\end{proposition}
+
+\begin{proof}
+Let $H=\overline{\alpha_G(G)}$.  By
+\cref{prop:alpha-embedding}, $\alpha_G(G)$ is locally compact in its subspace topology;
+it is dense in the Hausdorff space $H$.  By
+\cref{lem:dense-locally-compact-open}, it is open in $H$.  An open subgroup is closed,
+since its complement is the union of the other open cosets.  Thus $\alpha_G(G)$ is both
+dense and closed in $H$, so it equals $H$ and is closed in $\bidual G$.
+\end{proof}
+
+\subsection{The image is all of the bidual}
+
+\begin{proposition}[Surjectivity]
+\label{prop:alpha-surjective}
+$\alpha_G:G\to\bidual G$ is surjective.
+\end{proposition}
+
+\begin{proof}
+Suppose not.  By \cref{prop:alpha-closed},
+\[
+  \Omega=\bidual G\setminus\alpha_G(G)
+\]
+is a nonempty open set.  Apply \cref{prop:localized-fourier} to the LCA group
+$\dual G$.  There is $\Phi\in\Lp1(\dual G)$ whose Fourier transform on $\bidual G$ is
+nonzero and supported in $\Omega$.  It therefore vanishes at every evaluation character:
+\begin{equation}
+  0=\widehat\Phi(\alpha_G(x))
+  =\int_{\dual G}\Phi(\chi)\overline{\alpha_G(x)(\chi)}\,d\chi
+  =\int_{\dual G}\Phi(\chi)\chi(x^{-1})\,d\chi.
+  \label{eq:surjectivity-zero-transform}
+\end{equation}
+The finite complex measure $\Phi\,\mu_{\dual G}$ therefore has zero inverse
+Fourier--Stieltjes transform at every $x\in G$.  The asymmetric uniqueness theorem
+\cref{thm:FS-uniqueness}---which does not assume biduality---implies
+$\Phi\,\mu_{\dual G}=0$.  Hence $\Phi=0$ almost everywhere and
+$\widehat\Phi=0$, contradicting its construction.  Thus $\Omega$ is empty.
+\end{proof}
+
+\begin{theorem}[Pontryagin duality]
+\label{thm:pontryagin}
+For every LCA group $G$, evaluation is a natural isomorphism of topological groups
+\begin{equation}
+  \alpha_G:G\xrightarrow{\ \sim\ }\bidual G,
+  \qquad \alpha_G(x)(\chi)=\chi(x).
+  \label{eq:pontryagin-isomorphism}
+\end{equation}
+It is natural in $G$, and the triangle identity
+$(\dual{\alpha_G})\alpha_{\dual G}=\id_{\dual G}$ holds.
+\end{theorem}
+
+\begin{proof}
+Continuity is \cref{prop:evaluation-map}; injectivity, continuity of the inverse, and
+surjectivity are
+\cref{prop:alpha-injective,prop:alpha-embedding,prop:alpha-surjective}.  Naturality and
+the triangle identity are \cref{prop:naturality}.
+\end{proof}
+
+\begin{corollary}[Mutual normalization of Haar measures]
+\label{cor:mutual-haar-normalization}
+Start with $\mu_G$, construct $\mu_{\dual G}$ by
+\cref{prop:dual-haar-measure}, and then construct the dual of $\mu_{\dual G}$.  Under
+$\alpha_G:G\simeq\bidual G$, the resulting Haar measure on $\bidual G$ is exactly
+$\mu_G$, not merely a scalar multiple.
+\end{corollary}
+
+\begin{proof}
+Transport the second dual measure along $\alpha_G$; it is $c\mu_G$ for some $c>0$ by
+Haar uniqueness.  For $F\in\Lp1(\dual G)\cap\Lp2(\dual G)$, the adjoint formula for the
+unitary Plancherel operator gives
+\[
+  \widehat F(\alpha_G(x))=(\mathcal P_G^{-1}F)(x^{-1}).
+\]
+Apply Plancherel for the group $\dual G$ and then change variables by inversion:
+\[
+ \norm F_{2,\mu_{\dual G}}^2
+ =\norm{\widehat F}_{2,\mu_{\bidual G}}^2
+ =c\norm{\mathcal P_G^{-1}F}_{2,\mu_G}^2
+ =c\norm F_{2,\mu_{\dual G}}^2.
+\]
+Choose $F\neq0$ to obtain $c=1$.
+\end{proof}
+
+\section{Annihilators, subgroups, quotients, and exactness}
+\label{sec:annihilators}
+
+For $S\subseteq G$ and $T\subseteq\dual G$ define
+\begin{align*}
+ S^\perp&=\set{\chi\in\dual G:\chi(s)=1\text{ for all }s\in S},\\
+ T^\perp&=\set{x\in G:\chi(x)=1\text{ for all }\chi\in T}.
+\end{align*}
+The second definition uses the evaluation embedding, now known to identify $G$ with its
+bidual.
+
+\begin{lemma}[Elementary annihilator laws]
+\label{lem:annihilator-elementary}
+For arbitrary subsets $S,S_i\subseteq G$:
+\begin{enumerate}[label=(\alph*)]
+\item $S^\perp$ is a closed subgroup of $\dual G$;
+\item inclusion reverses: $S\subseteq T$ implies $T^\perp\subseteq S^\perp$;
+\item $S^\perp=(\overline{\angles S})^\perp$, where $\overline{\angles S}$ is the
+closed subgroup generated by $S$;
+\item $(\bigcup_iS_i)^\perp=\bigcap_iS_i^\perp$.
+\end{enumerate}
+The analogous statements hold for subsets of $\dual G$.
+\end{lemma}
+
+\begin{proof}
+The annihilator is the intersection over $s\in S$ of the kernels of the continuous
+evaluation homomorphisms $\chi\mapsto\chi(s)$, hence is a closed subgroup.  The other
+claims follow from the definitions, continuity of characters, and the fact that a
+character trivial on $S$ is trivial on the subgroup generated by $S$ and then on its
+closure.
+\end{proof}
+
+Let $H$ be a closed subgroup of $G$, and let $q:G\to G/H$ be the quotient map.  The
+quotient is again an LCA group.
+
+\begin{theorem}[Dual of a quotient]
+\label{thm:dual-quotient}
+Precomposition with $q$ is a topological isomorphism
+\begin{equation}
+  \dual q:\dual{(G/H)}\xrightarrow{\ \sim\ }H^\perp.
+  \label{eq:dual-quotient}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+A character $\psi$ of $G/H$ pulls back to a character of $G$ trivial on $H$.  Conversely,
+if $\chi\in H^\perp$, then $\bar\chi(gH)=\chi(g)$ is well-defined and is a homomorphism.
+It is continuous because $q$ is a quotient map and $\bar\chi\circ q=\chi$.  These
+constructions are inverse, proving algebraic bijectivity.  Continuity of $\dual q$ is
+functoriality of the compact--open topology.
+
+For continuity of the inverse we use the following compact lifting fact.  Every compact
+$C\subseteq G/H$ is contained in $q(K)$ for some compact $K\subseteq G$.  Indeed, choose
+a compact identity neighbourhood $B\subseteq G$.  The open sets
+$yq(B^\circ)$ cover $C$; choose finitely many, lift their translating elements to
+$x_1,\ldots,x_n\in G$, and take $K=\bigcup_ix_iB$.
+
+Now a compact--open neighbourhood $W(C,V)$ in $\dual{(G/H)}$ contains the inverse image
+of $W(K,V)\cap H^\perp$ under \eqref{eq:dual-quotient}, because $C\subseteq q(K)$.
+Thus the inverse is continuous at the identity and hence everywhere.
+\end{proof}
+
+\begin{theorem}[Double annihilator]
+\label{thm:double-annihilator}
+If $H$ is a closed subgroup of $G$, then
+\begin{equation}
+  (H^\perp)^\perp=H.
+  \label{eq:double-annihilator}
+\end{equation}
+For an arbitrary subset $S\subseteq G$,
+\begin{equation}
+  (S^\perp)^\perp=\overline{\angles S}.
+  \label{eq:double-annihilator-subset}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+The inclusion $H\subseteq(H^\perp)^\perp$ is immediate.  If $x\notin H$, then
+$q(x)\neq1$ in the LCA group $G/H$.  By
+\cref{cor:characters-separate}, choose $\psi\in\dual{(G/H)}$ with
+$\psi(q(x))\neq1$.  Its pullback $\psi\circ q$ belongs to $H^\perp$ and does not vanish
+at $x$.  Thus $x\notin(H^\perp)^\perp$, proving \eqref{eq:double-annihilator}.  The
+general formula follows from \cref{lem:annihilator-elementary} by replacing $S$ with
+$\overline{\angles S}$.
+\end{proof}
+
+\begin{corollary}[Lattice formulas]
+\label{cor:annihilator-lattice}
+For closed subgroups $H,K\leq G$,
+\begin{align}
+ (\overline{HK})^\perp&=H^\perp\cap K^\perp,
+ \label{eq:annihilator-join}\\
+ (H\cap K)^\perp&=\overline{H^\perp K^\perp}.
+ \label{eq:annihilator-meet}
+\end{align}
+The same formulas hold for arbitrary families, with closed generated subgroup replacing
+the finite product.
+\end{corollary}
+
+\begin{proof}
+The first identity is immediate from the definition.  Let
+$A=\overline{H^\perp K^\perp}$.  Applying the first identity in the dual group and then
+double annihilation gives
+\[
+ A^\perp=(H^\perp)^\perp\cap(K^\perp)^\perp=H\cap K.
+\]
+Taking annihilators once more gives \eqref{eq:annihilator-meet}.  The family version is
+identical.
+\end{proof}
+
+\subsection{Extension of characters}
+
+We first isolate a useful formal consequence of biduality.
+
+\begin{lemma}[The dual reflects isomorphisms]
+\label{lem:dual-reflects-iso}
+If $u:A\to B$ is a continuous homomorphism of LCA groups and
+$\dual u:\dual B\to\dual A$ is a topological isomorphism, then $u$ is a topological
+isomorphism.
+\end{lemma}
+
+\begin{proof}
+Naturality \eqref{eq:naturality} rearranges to
+\begin{equation}
+  u=\alpha_B^{-1}\circ\bidual u\circ\alpha_A.
+  \label{eq:dual-reflects-iso}
+\end{equation}
+If $\dual u$ is an isomorphism, so is its dual $\bidual u$; the two evaluation maps are
+isomorphisms by \cref{thm:pontryagin}.  Hence the right side is an isomorphism.
+\end{proof}
+
+\begin{theorem}[Character extension and dual of a subgroup]
+\label{thm:character-extension}
+Let $i:H\hookrightarrow G$ be the inclusion of a closed subgroup.  Restriction
+\[
+  \dual i:\dual G\longrightarrow\dual H,
+  \qquad\chi\longmapsto\chi|_H
+\]
+is a continuous open surjection with kernel $H^\perp$.  Equivalently, every continuous
+character of $H$ extends to a continuous character of $G$, and restriction induces a
+topological isomorphism
+\begin{equation}
+  \dual G/H^\perp\xrightarrow{\ \sim\ }\dual H.
+  \label{eq:dual-subgroup}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+The kernel is visibly $H^\perp$.  Put $N=H^\perp$, $Q=\dual G/N$, and let
+$\bar r:Q\to\dual H$ be the injective map induced by restriction.  It is continuous by
+the quotient property.  We prove that its dual is an isomorphism.
+
+Apply \cref{thm:dual-quotient} to the closed subgroup $N\leq\dual G$.  It identifies
+$\dual Q$ with $N^\perp\subseteq\bidual G$.  By
+\cref{thm:double-annihilator},
+\[
+  N^\perp=(H^\perp)^\perp=\alpha_G(H).
+\]
+Consequently the map
+\[
+ \theta:H\longrightarrow\dual Q,
+ \qquad \theta(h)(\chi N)=\chi(h)
+\]
+is a topological isomorphism.  For $h\in H$ and $\chi N\in Q$,
+\begin{align*}
+ ((\dual{\bar r})(\alpha_H(h)))(\chi N)
+ &=\alpha_H(h)(\bar r(\chi N))\\
+ &=(\chi|_H)(h)=\chi(h)=\theta(h)(\chi N).
+\end{align*}
+Thus $(\dual{\bar r})\circ\alpha_H=\theta$ is an isomorphism.  Since $\alpha_H$ is an
+isomorphism, $\dual{\bar r}$ is one too.  By
+\cref{lem:dual-reflects-iso}, $\bar r$ is a topological isomorphism.  In particular
+restriction is surjective and, as the composite of the open quotient map
+$\dual G\to Q$ with an isomorphism, is open.
+\end{proof}
+
+\begin{theorem}[Exactness]
+\label{thm:exactness}
+For a closed subgroup $H\leq G$, the strict exact sequence
+\[
+  1\longrightarrow H\xrightarrow{i}G\xrightarrow{q}G/H\longrightarrow1
+\]
+dualizes to the strict exact sequence
+\begin{equation}
+  1\longrightarrow\dual{(G/H)}
+  \xrightarrow{\dual q}\dual G
+  \xrightarrow{\dual i}\dual H\longrightarrow1.
+  \label{eq:dual-exact-sequence}
+\end{equation}
+Here $\dual q$ is a closed embedding and $\dual i$ is an open quotient map.
+\end{theorem}
+
+\begin{proof}
+By \cref{thm:dual-quotient}, $\dual q$ identifies the first group with $H^\perp$.
+By \cref{thm:character-extension}, this subgroup is the kernel of the surjective open map
+$\dual i$.  These statements give algebraic exactness and the asserted topology.
+\end{proof}
+
+\begin{proposition}[Kernel and closure of the dual image]
+\label{prop:dual-kernel-image}
+For any continuous homomorphism $f:G\to H$,
+\begin{align}
+ \ker(\dual f)&=(\overline{f(G)})^\perp,
+ \label{eq:kernel-dual-map}\\
+ \overline{(\dual f)(\dual H)}&=(\ker f)^\perp.
+ \label{eq:closure-image-dual-map}
+\end{align}
+If $f$ occurs as the inclusion or quotient map in a strict exact sequence, the closure in
+\eqref{eq:closure-image-dual-map} may be omitted.
+\end{proposition}
+
+\begin{proof}
+A character $\psi\in\dual H$ lies in the kernel precisely when it is trivial on $f(G)$,
+and continuity makes this equivalent to triviality on its closure.  For the second
+formula, $x\in G$ annihilates the image of $\dual f$ exactly when
+\[
+  \psi(f(x))=1\quad\text{for every }\psi\in\dual H.
+\]
+Characters separate points of $H$, so this is equivalent to $f(x)=1$.  Thus the
+annihilator of the image is $\ker f$; take annihilators again and use
+\cref{thm:double-annihilator}.  The last assertion follows from
+\cref{thm:dual-quotient,thm:character-extension}.
+\end{proof}
+
+\section{Categorical and structural consequences}
+\label{sec:categorical}
+
+\begin{theorem}[Contravariant equivalence]
+\label{thm:anti-equivalence}
+Pontryagin duality is a contravariant equivalence on the category of LCA groups and
+continuous homomorphisms.  Its object map is $G\mapsto\dual G$, its morphism map is
+$f\mapsto\dual f$, and its unit is the natural isomorphism $\alpha:\id\Rightarrow\dual{(
+\dual{\mathord{-}})}$.
+\end{theorem}
+
+\begin{proof}
+Contravariant identity and composition laws were proved in
+\cref{sec:evaluation}.  The maps $\alpha_G$ are isomorphisms by
+\cref{thm:pontryagin}, are natural by \eqref{eq:naturality}, and obey the triangle
+identity \eqref{eq:triangle}.  These data are precisely a dual equivalence.
+
+Explicitly, the functor is faithful: if $\dual f=\dual g$, then for every $x\in G$ and
+$\psi\in\dual H$,
+$\psi(f(x))=(\dual f\,\psi)(x)=(\dual g\,\psi)(x)=\psi(g(x))$; characters separate
+points, so $f=g$.  It is full in the contravariant sense.  Given a continuous
+$u:\dual H\to\dual G$, define
+\begin{equation}
+ f=\alpha_H^{-1}\circ\dual u\circ\alpha_G:G\longrightarrow H.
+ \label{eq:recover-map-from-dual}
+\end{equation}
+For $x\in G$ and $\psi\in\dual H$,
+\[
+ \psi(f(x))=(\dual u(\alpha_G(x)))(\psi)
+ =\alpha_G(x)(u(\psi))=u(\psi)(x),
+\]
+so $\dual f=u$ by extensionality.
+\end{proof}
+
+\begin{theorem}[Compact/discrete equivalence]
+\label{thm:compact-discrete-iff}
+For an LCA group $G$,
+\begin{align*}
+ G\text{ is compact}&\quad\Longleftrightarrow\quad\dual G\text{ is discrete},\\
+ G\text{ is discrete}&\quad\Longleftrightarrow\quad\dual G\text{ is compact}.
+\end{align*}
+Thus Pontryagin duality restricts to a dual equivalence between compact abelian groups
+and discrete abelian groups.
+\end{theorem}
+
+\begin{proof}
+The forward implications are \cref{prop:compact-discrete-basic}.  If $\dual G$ is
+discrete, then $\bidual G$ is compact, and $G\simeq\bidual G$ is compact.  If
+$\dual G$ is compact, then $\bidual G$ is discrete, and hence so is $G$.
+\end{proof}
+
+\begin{corollary}
+An LCA group is both compact and discrete if and only if it is finite.  In that case its
+dual is finite of the same cardinality.
+\end{corollary}
+
+\begin{proof}
+A compact discrete space has a finite cover by singleton open sets.  Conversely a finite
+Hausdorff group is compact and discrete.  For finite $G$, biduality gives
+$\abs G=\abs{\bidual G}$; finite character theory, or the cyclic decomposition in
+\cref{ex:finite}, gives $\abs{\dual G}=\abs G$.
+\end{proof}
+
+\begin{proposition}[Closed subgroup tests]
+\label{prop:annihilator-compact-open}
+For a closed subgroup $H\leq G$:
+\begin{enumerate}[label=(\alph*)]
+\item if $H$ is open, then $H^\perp$ is compact;
+\item if $H$ is compact, then $H^\perp$ is open in $\dual G$;
+\item $G/H$ is compact if and only if $H^\perp$ is discrete;
+\item $G/H$ is discrete if and only if $H^\perp$ is compact.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+If $H$ is open, $G/H$ is discrete, so
+$H^\perp\simeq\dual{(G/H)}$ is compact.  If $H$ is compact, $\dual H$ is discrete and
+restriction $\dual G\to\dual H$ is continuous; the kernel $H^\perp$, the inverse image
+of the open singleton $\{1\}$, is open.  The last two statements follow from
+\cref{thm:dual-quotient,thm:compact-discrete-iff}.
+\end{proof}
+
+\subsection{Products and sums}
+
+\begin{proposition}[Finite products]
+\label{prop:dual-finite-product}
+For LCA groups $G$ and $H$, restriction to the two factors is a topological isomorphism
+\[
+  \dual{(G\times H)}\xrightarrow{\ \sim\ }\dual G\times\dual H.
+\]
+Its inverse sends $(\chi,\psi)$ to $(g,h)\mapsto\chi(g)\psi(h)$.
+\end{proposition}
+
+\begin{proof}
+Every $(g,h)$ factors as $(g,1)(1,h)$, which proves that the displayed maps are
+algebraic inverses.  They are continuous by compact--open functoriality.  For continuity
+of the inverse, if $K\subseteq G\times H$ is compact, its projections $K_G,K_H$ are
+compact.  Choose identity neighbourhoods $V_G,V_H\subseteq\T$ with
+$V_GV_H\subseteq V$.  Then
+\[
+  W(K_G,V_G)\times W(K_H,V_H)
+\]
+maps into $W(K,V)$.  This proves continuity at the identity.
+\end{proof}
+
+\begin{proposition}[Discrete sums and compact products]
+\label{prop:dual-sum-product}
+Let $(D_i)_{i\in I}$ be discrete abelian groups and $(K_i)_{i\in I}$ compact abelian
+groups.  Then
+\begin{align}
+ \dual{\left(\bigoplus_{i\in I}D_i\right)}
+   &\simeq\prod_{i\in I}\dual{D_i},
+ \label{eq:dual-direct-sum}\\
+ \dual{\left(\prod_{i\in I}K_i\right)}
+   &\simeq\bigoplus_{i\in I}\dual{K_i}.
+ \label{eq:dual-compact-product}
+\end{align}
+The first isomorphism is between compact groups, and the second between discrete groups.
+\end{proposition}
+
+\begin{proof}
+A homomorphism from the algebraic direct sum is uniquely a family of homomorphisms from
+the factors, and continuity is automatic because the sum is discrete.  Compact subsets
+of a discrete space are finite, so the compact--open topology is pointwise convergence
+on finitely many elements; this is exactly the product topology.  This proves
+\eqref{eq:dual-direct-sum}.
+
+For the second formula, a finite-support family of characters defines a character of the
+product.  Conversely, let $\chi:\prod_iK_i\to\T$ be continuous.  The inverse image of
+$A_{\pi/2}$ contains a basic identity neighbourhood
+$\prod_iU_i$, with $U_i=K_i$ outside a finite set $F$.  For $j\notin F$, the entire
+coordinate subgroup $K_j$ maps into $A_{\pi/2}$; by
+\cref{lem:nss-circle}, it maps trivially.  Hence $\chi$ depends on only the coordinates
+in $F$.  This proves algebraic bijectivity.  Both sides are discrete: the product is
+compact, so its dual is discrete, and every $\dual{K_i}$ is discrete and the direct sum
+is given the discrete topology.  Thus the bijection is a homeomorphism.
+\end{proof}
+
+\subsection{A general Fourier inversion criterion}
+
+\begin{theorem}
+\label{thm:general-fourier-inversion}
+Let $f\in\Lp1(G)$.  If $\widehat f\in\Lp1(\dual G)$, then
+\begin{equation}
+  f(x)=\int_{\dual G}\widehat f(\chi)\chi(x)\,d\chi
+  \label{eq:general-inversion}
+\end{equation}
+for almost every $x$.  The right side is a continuous function vanishing at infinity;
+hence \eqref{eq:general-inversion} holds at every point at which $f$ has that continuous
+representative.  In particular, the Fourier transform is injective on $\Lp1(G)$.
+\end{theorem}
+
+\begin{proof}
+Let
+$g(x)=\int\widehat f(\chi)\chi(x)\,d\chi$.  Dominated convergence and the
+Riemann--Lebesgue argument on the dual group show $g\in\Czero(G)$.  With $e_U$ from
+\eqref{eq:positive-approx-identity}, Fubini and the already proved inversion formula for
+$e_U$ give
+\[
+ (f*e_U)(x)
+ =\int_{\dual G}\widehat f(\chi)\widehat{e_U}(\chi)\chi(x)\,d\chi.
+\]
+The left side converges to $f$ in $\Lp1$.  Since
+$\abs{\widehat{e_U}}\leq1$ and $\widehat{e_U}\to1$ pointwise, dominated convergence
+shows that the right side converges to $g$ uniformly in $x$.  On each compact
+$K\subseteq G$, uniform convergence implies convergence in $\Lp1(K)$, while global
+$\Lp1$ convergence also implies convergence in $\Lp1(K)$.  Uniqueness of the local
+$\Lp1$ limit gives $f=g$ almost everywhere on every compact set; Radon inner regularity
+then gives equality almost everywhere on $G$.  If $\widehat f=0$, then $g=0$, proving
+injectivity.
+\end{proof}
+
+\section{Canonical examples}
+\label{sec:examples}
+
+In the following examples additive notation is used inside formulas, while the abstract
+duality functor remains multiplicative.
+
+\begin{example}[$\Z$ and the circle]
+\label{ex:Z-circle}
+The map
+\[
+  \T\longrightarrow\dual\Z,
+  \qquad z\longmapsto(n\mapsto z^n)
+\]
+is a topological isomorphism.  Indeed, a homomorphism from $\Z$ is uniquely determined
+by the image of $1$, and every such homomorphism is continuous because $\Z$ is discrete.
+The displayed map is continuous; it is a continuous bijection from compact $\T$ to the
+Hausdorff space $\dual\Z$, hence a homeomorphism.  Dualizing and applying
+\cref{thm:pontryagin} gives the canonical isomorphism
+\[
+  \dual\T\simeq\Z,
+  \qquad n\longmapsto(z\mapsto z^n).
+\]
+The topology on $\dual\T$ is discrete by compactness of $\T$.
+\end{example}
+
+\begin{example}[The real line]
+\label{ex:R}
+For $\xi\in\R$ put
+\[
+  \chi_\xi(x)=\exp(2\pi i\xi x).
+\]
+Then $\xi\mapsto\chi_\xi$ is a topological isomorphism
+$\R\simeq\dual\R$.
+
+To prove surjectivity without invoking biduality, let $\chi:\R\to\T$ be a continuous
+additive character.  On a sufficiently small interval $(-\delta,\delta)$, the image lies
+in an arc on which a continuous argument is unique.  Write
+$\chi(x)=e^{2\pi ia(x)}$ there, with $a(0)=0$.  Whenever
+$x,y,x+y\in(-\delta,\delta)$, the difference
+$a(x+y)-a(x)-a(y)$ is an integer and varies continuously; at $(0,0)$ it is zero, so it
+is zero throughout the connected small domain.  Thus $a$ is locally additive.  For
+arbitrary $x$, choose $n$ with $x/n\in(-\delta,\delta)$ and set
+$\widetilde a(x)=na(x/n)$.  Local additivity shows that this is independent of $n$ and
+is a continuous additive lift of $\chi$.  Every continuous additive
+$\widetilde a:\R\to\R$ has the form $\widetilde a(x)=\xi x$: first for rational $x$,
+then for real $x$ by density.  Hence $\chi=\chi_\xi$.
+
+The parameter map is continuous for the compact--open topology by uniform continuity of
+$(\xi,x)\mapsto e^{2\pi i\xi x}$ on compact rectangles.  Conversely, uniform closeness
+of $\chi_\xi$ to $1$ on $[-1,1]$ first forces $\abs\xi<1/2$ (otherwise some
+$x\in[-1,1]$ maps to $-1$), after which the principal argument at $x=1$ controls
+$\abs\xi$.  Thus the inverse parameter map is continuous.
+\end{example}
+
+\begin{example}[Euclidean groups]
+\label{ex:Rn}
+By \cref{prop:dual-finite-product,ex:R},
+\[
+ \dual{\R^n}\simeq\R^n,
+ \qquad
+ \xi\longmapsto\bigl(x\mapsto e^{2\pi i\langle\xi,x\rangle}\bigr).
+\]
+Under Lebesgue measure on both sides this is the normalization used in
+\eqref{eq:fourier-convention}; it is self-dual, so no $(2\pi)^n$ factor occurs in
+inversion.
+\end{example}
+
+\begin{example}[Finite cyclic groups]
+\label{ex:finite-cyclic}
+For $C_n=\Z/n\Z$ with the discrete topology,
+\[
+ C_n\xrightarrow{\ \sim\ }\dual{C_n},
+ \qquad k\longmapsto
+ \left(m\longmapsto\exp\left(\frac{2\pi i km}{n}\right)\right).
+\]
+This is an algebraic bijection between finite discrete groups and hence a topological
+isomorphism.  Counting measure on $C_n$ is dual to $(1/n)$ times counting measure on its
+dual with our inversion convention.
+\end{example}
+
+\begin{example}[Finite abelian groups]
+\label{ex:finite}
+The structure theorem writes a finite abelian group noncanonically as a finite product of
+cyclic groups.  The preceding example and finite-product duality give a noncanonical
+isomorphism $A\simeq\dual A$.  In contrast, the evaluation isomorphism
+$A\simeq\bidual A$ is canonical and natural.  This distinction should be preserved in a
+formal API: a finite group generally has no preferred isomorphism with its first dual.
+\end{example}
+
+\begin{example}[Tori and lattices]
+For the $n$-torus $\T^n$ and the lattice $\Z^n$,
+\[
+  \dual{\T^n}\simeq\Z^n,
+  \qquad \dual{\Z^n}\simeq\T^n.
+\]
+More generally, if $\Lambda\leq\R^n$ is a lattice, quotient duality gives
+\[
+  \dual{(\R^n/\Lambda)}\simeq
+  \Lambda^\perp
+  =\set{\xi\in\R^n:\langle\xi,\lambda\rangle\in\Z
+      \text{ for every }\lambda\in\Lambda},
+\]
+the usual dual lattice, with the discrete topology.
+\end{example}
+
+\begin{example}[Infinite sums and products]
+For any set $I$, \cref{prop:dual-sum-product} specializes to
+\[
+  \dual{\left(\bigoplus_I\Z\right)}\simeq\T^I,
+  \qquad
+  \dual{(\T^I)}\simeq\bigoplus_I\Z.
+\]
+The first source is discrete and the first target compact; the second source is compact
+even for uncountable $I$, and every continuous character depends on finitely many
+coordinates.
+\end{example}
+
+\section{A Mathlib-oriented implementation plan}
+\label{sec:mathlib-plan}
+
+This section translates the proof into declarations and dependency layers.  It is not a
+claim that the proposed declaration names already exist.  The items marked ``existing''
+were checked against \mathlib~v4.32.0; all others are proposed additions.
+
+\subsection{Existing kernel}
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.40\textwidth}
+                  >{\raggedright\arraybackslash}p{0.52\textwidth}}
+\toprule
+Existing declaration or module & Role \\
+\midrule
+\endhead
+\path{PontryaginDual} & Definition as \texttt{A ->\_t* Circle}, with induced
+compact--open topology. \\
+\path{PontryaginDual.ext}, \path{one_apply} & Extensionality and evaluation simp
+normal forms. \\
+\path{PontryaginDual.map}, \path{map_apply}, \path{map_comp} & Contravariant
+precomposition. \\
+\path{PontryaginDual.mapHom} & Continuity of the map operation in a locally compact
+codomain parameter. \\
+\path{ContinuousMonoidHom.isInducing_toContinuousMap} & Transfers compact--open
+topology results from continuous maps. \\
+\path{ContinuousMonoidHom.instContinuousEval} & Joint evaluation for a locally
+compact domain. \\
+\path{ContinuousMonoidHom.continuous_of_continuous_uncurry} & Currying joint
+evaluation to construct $\alpha_G$. \\
+\path{ContinuousMonoidHom.locallyCompactSpace_of_hasBasis} & Local compactness of
+the character group from a countable arc basis in $\T$. \\
+\path{Circle.centeredArc}, \path{Circle.mem_centeredArc},
+\path{Circle.hasBasis_centeredArc_div_two_pow} & The small-arc basis. \\
+\path{Circle.eq_one_of_forall_pow_mem_centeredArc_pi_div_two} & No small
+subgroups for the circle. \\
+\path{Mathlib.MeasureTheory.Measure.Haar.Basic} & Haar measure and invariance. \\
+\path{Mathlib.MeasureTheory.Group.IntegralConvolution} and
+\path{Mathlib.Analysis.Convolution} & Convolution infrastructure. \\
+\path{Mathlib.Analysis.Convex.KreinMilman} & Krein--Milman. \\
+\path{Mathlib.Analysis.Normed.Module.WeakDual} & Weak dual topology and
+Banach--Alaoglu infrastructure. \\
+\path{Mathlib.Topology.ContinuousMap.StoneWeierstrass} & Density of the Fourier
+algebra. \\
+\path{Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Basic} & Representation of
+positive functionals by Radon measures. \\
+\bottomrule
+\end{longtable}
+
+The source already gives the dual three central instances:
+\texttt{T2Space}, \texttt{IsTopologicalGroup}, and
+\texttt{LocallyCompactSpace}.  It also gives compactness for a discrete source and
+discreteness for a compact source.  These facts should be reused, not reproved inside the
+biduality file.
+
+\subsection{Recommended file and declaration layers}
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.08\textwidth}
+                  >{\raggedright\arraybackslash}p{0.31\textwidth}
+                  >{\raggedright\arraybackslash}p{0.51\textwidth}}
+\toprule
+Layer & Suggested module & Principal new declarations \\
+\midrule
+\endhead
+L0 & \path{Topology/Algebra/PontryaginDual/Evaluation} &
+\texttt{eval}, \texttt{eval\_apply}, group-hom laws, continuity, naturality, triangle
+identity. \\
+L1 & \path{Analysis/Fourier/LCA/ApproximateIdentity} & Normalized $\Cc$ bumps,
+translation continuity in $\Lp p$, approximate identities, compact-uniform convergence
+of their character integrals. \\
+L2 & \path{Analysis/Fourier/LCA/Spectrum} & LCA convolution algebra, Riemann--Lebesgue,
+$\Lp1$ spectrum equivalence, transform topology equals compact--open, density in
+$\Czero$, Fourier--Stieltjes uniqueness. \\
+L3 & \path{Analysis/Fourier/LCA/PositiveType} & Finite-matrix positive type, integral
+criterion, elementary bounds, convolution-square examples. \\
+L4 & \path{Analysis/Fourier/LCA/GNS} & Semidefinite quotient, Hilbert completion,
+strongly continuous cyclic representation, extreme/irreducible criterion, abelian Schur
+lemma. \\
+L5 & \path{Analysis/Fourier/LCA/Bochner} & Weak-$*$ compact positive ball,
+Krein--Milman proof, representing positive measure, uniqueness. \\
+L6 & \path{Analysis/Fourier/LCA/Inversion} & $V^1(G)$, $\sigma_f$, multiplier class
+$\mathcal F$, dual Haar measure, inversion and scaling. \\
+L7 & \path{Analysis/Fourier/LCA/Plancherel} & Dense-domain Parseval, unitary extension,
+$\Lp2$ product--convolution, localized Fourier transform. \\
+L8 & \path{Topology/Algebra/PontryaginDual/Duality} & Injectivity, neighbourhood-basis
+recovery, closed image, surjectivity, \texttt{ContinuousMulEquiv} biduality. \\
+L9 & \path{Topology/Algebra/PontryaginDual/Exact} & Annihilators, quotient dual,
+double annihilator, character extension, strict exactness. \\
+L10 & \path{Topology/Algebra/PontryaginDual/Examples} & $\Z$, $\T$, $\R$, finite
+cyclic groups, finite products, discrete sums/compact products. \\
+\bottomrule
+\end{longtable}
+
+This layering keeps the existing lightweight definition file from importing measure
+theory and functional analysis.  In particular, the definition and functorial map remain
+usable without importing the proof of biduality.
+
+\subsection{Evaluation map skeleton}
+
+The first implementation milestone is independent of the analytic proof.  A typical
+constructor skeleton is:
+
+\begin{lstlisting}
+namespace PontryaginDual
+
+noncomputable def eval (G : Type*)
+    [CommGroup G] [TopologicalSpace G]
+    [IsTopologicalGroup G] [LocallyCompactSpace G] :
+    G ->_t* PontryaginDual (PontryaginDual G) where
+  toFun x :=
+    { toFun := fun chi => chi x
+      map_one' := by simp
+      map_mul' := by intro chi psi; rfl
+      continuous_toFun := continuous_eval_const x }
+  map_one' := by ext chi; exact chi.map_one
+  map_mul' x y := by ext chi; exact chi.map_mul x y
+  continuous_toFun := by
+    apply ContinuousMonoidHom.continuous_of_continuous_uncurry
+    -- discharge with joint evaluation, after swapping factors
+    exact ...
+
+@[simp] theorem eval_apply (x : G) (chi : PontryaginDual G) :
+    eval G x chi = chi x := rfl
+
+end PontryaginDual
+\end{lstlisting}
+
+The actual names of the evaluation lemmas should be resolved with \texttt{\#check} in the
+target branch.  It is preferable to prove continuity through the existing
+\texttt{ContinuousEval} instance rather than unfold the compact--open topology.
+
+\subsection{Suggested theorem inventory}
+
+The following inventory is fine-grained enough for autoformalization.  Each line should
+be a declaration with only earlier lines as substantive dependencies.
+
+\begin{enumerate}[label=\textbf{P\arabic*.},leftmargin=4em]
+\item Normalized $\Cc$ bump subordinate to an identity neighbourhood.
+\item $\Lp p$ translation isometry and continuity.
+\item Approximate identity convergence; uniform character convergence on compact sets.
+\item $\Lp1$ convolution norm, associativity, involution, and convolution square of
+positive type.
+\item Fourier norm bound, continuity, translation/involution/convolution identities.
+\item Riemann--Lebesgue vanishing at infinity.
+\item Every nonzero multiplicative functional on the unitization of $\Lp1$ is bounded.
+\item Spectrum classification $\Delta(\Lp1(G))\simeq\dual G$.
+\item Joint evaluation for the transform topology and equality with compact--open.
+\item Stone--Weierstrass density of $\{\widehat f\}$ in $\Czero(\dual G)$.
+\item Fourier--Stieltjes uniqueness in the asymmetric form of
+\cref{thm:FS-uniqueness}.
+\item Equivalence of finite-matrix and integral positive type.
+\item GNS construction and continuous cyclic coefficient representative.
+\item Extreme coefficient if and only if irreducible GNS representation.
+\item Abelian Schur lemma and classification of extreme points.
+\item Weak-$*$ compactness of $P(G)$.
+\item Bochner existence and uniqueness.
+\item Symmetric measure identity \eqref{eq:symmetric-measure-identity}.
+\item Positive approximate net $e_U$ and recovery formula
+\eqref{eq:tau-recovery}.
+\item Multiplier class closure, translation, and inclusion of $\Cc(\dual G)$.
+\item Construction, nontriviality, and invariance of dual Haar measure.
+\item Inversion on $V^1$ and uniqueness of dual normalization.
+\item Dense Parseval isometry and density of its range.
+\item Plancherel and localized-transform lemma.
+\item Evaluation injective.
+\item Polar sets recover the original neighbourhood filter.
+\item Evaluation image closed.
+\item Evaluation image surjective.
+\item Assemble \texttt{ContinuousMulEquiv}; prove naturality simp lemmas.
+\item Quotient duality, double annihilator, character extension, and exactness.
+\end{enumerate}
+
+\subsection{Representation choices and known pressure points}
+
+\paragraph{Multiplicative versus additive APIs.}
+The public theorem should first be proved for the multiplicative
+\texttt{PontryaginDual}.  Fourier integration uses the coercion
+\texttt{Circle -> Complex}.  Only after the multiplicative development is stable should
+additive wrappers be generated or proved.  Premature \texttt{to\_additive} use is likely
+to create brittle names around convolution and character evaluation.
+
+\paragraph{Positive type.}
+Use the finite-matrix predicate as the public definition: it is algebraic, does not
+mention Haar measure, and applies to arbitrary topological groups.  Add the integral
+criterion as a theorem under LCA and Haar hypotheses.  For matrices indexed by
+\texttt{Fin n}, the expression can be written as a quadratic form; this makes the
+$2\times2$ bound and closure under limits reusable.
+
+\paragraph{Complex measures.}
+Positive measures can use \texttt{Measure}; linear combinations in $V(G)$ require
+complex vector measures (the \texttt{MeasureTheory.VectorMeasure} hierarchy) or an
+explicit four-positive-measure representation.  The latter is initially easier for
+Bochner but makes uniqueness and multiplier identities verbose.  A thin local structure
+containing a complex vector measure together with finite-variation evidence is likely the
+cleanest interface.
+
+\paragraph{Weak-$*$ topology.}
+State positivity on $\Lp\infty$ classes by the family of inequalities
+$\operatorname{re}\langle\varphi,k_f\rangle\geq0$ and
+$\operatorname{im}\langle\varphi,k_f\rangle=0$.  These are manifestly weak-$*$ closed.
+Choose continuous representatives only through the GNS theorem.  Do not put
+\texttt{Continuous} inside the weak-$*$ closed set.
+
+\paragraph{No $\sigma$-compactness shortcut.}
+Haar measure on an arbitrary LCA group need not be $\sigma$-finite.  Any use of
+$(\Lp1)^*=\Lp\infty$, extraction of almost-everywhere convergent subsequences, or
+sequential compactness must be checked for hidden countability assumptions.  The proof
+above uses nets, local regularity, and compact testing.  If the available $\Lp1$ duality
+theorem is too restrictive, the spectrum proof can use the translation-ratio argument
+directly and avoid representing a functional by an $\Lp\infty$ function.
+
+\paragraph{A.e. representatives.}
+Convolution of two $\Lp2$ functions and inverse transforms have canonical continuous
+representatives.  Give these representatives named definitions and simp lemmas; do not
+silently rewrite an $\Lp p$ class as a pointwise function.  Every upgrade from almost
+everywhere to everywhere should cite continuity and full support explicitly.
+
+\paragraph{Quotients.}
+The compact-lifting lemma used in \cref{thm:dual-quotient} deserves its own general
+topological-group declaration: a compact subset of $G/H$ is contained in the image of a
+compact subset of $G$.  It avoids any local-section or second-countability assumption.
+
+\paragraph{Noncomputability and normalization.}
+Haar measures, Riesz representatives, and the inverse of the evaluation bijection are
+noncomputable.  Keep the topological homomorphism \texttt{eval} computable in its formula,
+but mark the assembled equivalence and analytic constructions noncomputable.  Store the
+dual Haar measure together with its inversion property so that rescaling lemmas can use
+uniqueness rather than unfold choices.
+
+\subsection{No-circularity audit}
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.30\textwidth}
+                  >{\raggedright\arraybackslash}p{0.62\textwidth}}
+\toprule
+Result & Why it does not presuppose Pontryagin duality \\
+\midrule
+\endhead
+Local compactness of $\dual G$ & Arzel\`a--Ascoli plus the no-small-subgroups property of
+$\T$. \\
+$\Lp1$ spectrum & Translation in the convolution algebra; no assertion that characters
+of $\dual G$ are evaluations. \\
+Fourier--Stieltjes uniqueness & Stone--Weierstrass density of transforms of
+$\Lp1(G)$; tests only evaluation functions. \\
+Bochner & Krein--Milman and the classification of extreme positive coefficients; uses
+Fourier--Stieltjes uniqueness only. \\
+Dual Haar measure and inversion & Bochner, the multiplier class, Riesz--Markov, and Haar
+uniqueness. \\
+Injectivity of $\alpha_G$ & The already established inversion formula and a compactly
+supported convolution square. \\
+Closed image & Topological embedding and the dense-locally-compact-subspace lemma. \\
+Surjectivity of $\alpha_G$ & Plancherel supplies a transform supported off the closed
+image; asymmetric Fourier--Stieltjes uniqueness forces it to vanish. \\
+Character extension & Proved only after biduality, by dualizing the induced quotient map;
+it is not an input to the analytic proof. \\
+\bottomrule
+\end{longtable}
+
+This audit should be mirrored in the Lean import graph.  In particular,
+\texttt{Bochner.lean}, \texttt{Inversion.lean}, and \texttt{Plancherel.lean} must not
+import \texttt{PontryaginDual/Duality.lean}.
+
+\section{Dependency summary}
+\label{sec:dependency-summary}
+
+The logical spine of the proof is:
+\begin{enumerate}[label=\arabic*.,leftmargin=2.5em]
+\item compact--open characters form an LCA group and joint evaluation is continuous;
+\item the $\Lp1$ spectrum is $\dual G$, so Fourier transforms are dense in
+$\Czero(\dual G)$ and finite measures are determined by evaluation characters;
+\item GNS plus abelian irreducibility identifies extreme normalized positive-type
+functions with characters;
+\item Banach--Alaoglu, Krein--Milman, and measure uniqueness prove Bochner's theorem;
+\item the multiplier construction produces the uniquely normalized Haar measure on
+$\dual G$ and Fourier inversion on convolution squares;
+\item inversion separates points and recovers the original topology from compact polars;
+\item Plancherel produces localized Fourier transforms;
+\item a localized transform outside the closed evaluation image contradicts measure
+uniqueness, proving surjectivity;
+\item biduality then gives annihilator duality, character extension, exactness, and the
+categorical anti-equivalence.
+\end{enumerate}
+
+Every arrow in this chain points forward.  The proof therefore supplies an
+autoformalization order as well as a mathematical proof.
+
+\appendix
+
+\section{Notation-to-Lean dictionary}
+\label{app:dictionary}
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.23\textwidth}
+                  >{\raggedright\arraybackslash}p{0.31\textwidth}
+                  >{\raggedright\arraybackslash}p{0.36\textwidth}}
+\toprule
+Mathematics & Lean target & Comment \\
+\midrule
+\endhead
+$\T$ & \path{Circle} & Subtype of $\C$ of norm one; multiplicative. \\
+$\dual G$ & \path{PontryaginDual G} & Definitional equality with
+\texttt{G ->\_t* Circle}. \\
+$\dual f$ & \path{PontryaginDual.map f} & Precomposition; reverses arrows. \\
+$\alpha_G$ & proposed \path{PontryaginDual.eval G} & Continuous homomorphism into the
+double dual. \\
+$\alpha_G:G\simeq\bidual G$ & proposed \path{PontryaginDual.toDoubleDual G} & A
+\path{ContinuousMulEquiv}; name subject to library convention. \\
+$W(K,U)$ & compact--open \texttt{MapsTo} set & Use
+\path{ContinuousMap.isOpen_setOf_mapsTo}. \\
+Haar measure & \path{MeasureTheory.Measure.IsHaarMeasure} / library Haar choice & Keep
+the initial measure explicit during Fourier normalization. \\
+$f*g$ & group convolution & Be explicit about the selected continuous representative. \\
+$f^*$ & involution $x\mapsto\overline{f(x^{-1})}$ & Abelian groups are unimodular. \\
+finite complex measure & complex \texttt{VectorMeasure} of finite variation & Positive
+special case is an ordinary \texttt{Measure}. \\
+$S^\perp$ & proposed \path{PontryaginDual.annihilator S} & Prefer a closed subgroup
+when $S$ is a subgroup. \\
+$G/H$ & quotient group type & Requires $H$ closed for Hausdorff/LCA instances. \\
+\bottomrule
+\end{longtable}
+
+\section{Foundational lemmas worth packaging separately}
+\label{app:foundation-lemmas}
+
+The proof repeatedly uses the following generic statements.  If any is absent in the
+required generality, it should be added outside the Pontryagin namespace.
+
+\begin{enumerate}[label=(A\arabic*)]
+\item A dense locally compact subspace of a Hausdorff space is open
+(\cref{lem:dense-locally-compact-open}).
+\item A locally compact subgroup of a Hausdorff topological group is closed.
+This follows by applying (A1) to its closure.
+\item Every compact subset of a quotient topological group $G/H$ is contained in the
+image of a compact subset of $G$, when $G$ is locally compact.
+\item A bounded continuous homomorphism $G\to\C^\times$ has image in $\T$.
+\item A positive functional on $\Cc(X)$ is bounded on functions with support in a fixed
+compact set.
+\item If two continuous functions on a full-support measure space agree almost
+everywhere, they agree everywhere.
+\item If a continuous density $u$ satisfies $u\mu\geq0$ and $\mu$ has full support, then
+$u\geq0$ pointwise.
+\item The convolution of two $\Lp2$ functions has a canonical continuous bounded
+representative, with the $\Lp2$ norm product bound.
+\item Uniform convergence on compact sets of characters, combined with an integrable
+tail estimate, gives continuity of the Fourier transform.
+\item A positive semidefinite sesquilinear form obeys Cauchy--Schwarz and descends to an
+inner product on the quotient by its nullspace.
+\end{enumerate}
+
+\section{Bibliographic notes}
+
+The analytic organization follows the classical Haar--Fourier--positive-type route.  The
+proof has been rewritten here with conventions and dependency boundaries chosen for
+\mathlib.  Useful references for comparison are:
+
+\begin{thebibliography}{9}
+
+\bibitem{HR1}
+E. Hewitt and K. A. Ross,
+\emph{Abstract Harmonic Analysis, Vol. I},
+Springer, second edition, 1979.
+
+\bibitem{HR2}
+E. Hewitt and K. A. Ross,
+\emph{Abstract Harmonic Analysis, Vol. II},
+Springer, 1970.
+
+\bibitem{RV}
+D. Ramakrishnan and R. J. Valenza,
+\emph{Fourier Analysis on Number Fields},
+Graduate Texts in Mathematics 186, Springer, 1999.
+
+\bibitem{Folland}
+G. B. Folland,
+\emph{A Course in Abstract Harmonic Analysis},
+CRC Press, second edition, 2016.
+
+\bibitem{Molteni}
+G. Molteni,
+\emph{Fourier Analysis in Abelian and Locally Compact Groups},
+course notes, Universit\`a degli Studi di Milano.
+
+\bibitem{MathlibPD}
+The \mathlib community,
+\emph{Mathlib.Topology.Algebra.PontryaginDual},
+source and generated documentation for \mathlib~v4.32.0.
+
+\end{thebibliography}
+
+\end{document}
