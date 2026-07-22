@@ -5,6 +5,7 @@ import Pontryagin.Density
 import Pontryagin.DualPolars
 import Pontryagin.FourierTransform
 import Pontryagin.L1Algebra
+import Pontryagin.PositiveType
 import Pontryagin.StoneWeierstrassC0
 import Pontryagin.Topology
 import Pontryagin.Translation
