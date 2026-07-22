@@ -1,6 +1,8 @@
 import Pontryagin.Basic
 import Pontryagin.CcFubini
+import Pontryagin.Convolution
 import Pontryagin.Density
+import Pontryagin.DualPolars
 import Pontryagin.StoneWeierstrassC0
 import Pontryagin.Topology
 import Pontryagin.Translation
