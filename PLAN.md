@@ -42,13 +42,22 @@ deviations recorded below** (chosen after a full inventory of Mathlib v4.32.0).
      supp γ (well-defined by the symmetric identity), positive, translation-invariant
      ⇒ `μ_Ĝ := rieszMeasure Λ`; invariance + nontriviality ⇒ `IsOpenPosMeasure`.
 
-3. **No σ-compactness assumption; restricted Fubini instead.** Haar measure on a
-   non-σ-compact group is not s-finite, so Mathlib's `Measure.prod` Fubini does not
-   apply directly — and Ĝ can be non-σ-compact even for compact G, so a σ-compact
-   hypothesis cannot be discharged by reduction on G alone. Instead: a dedicated module
-   proves Fubini/Tonelli for integrands (a.e.) supported on σ-finite rectangles
-   (`μ.restrict S` is σ-finite; every `Integrable` function has σ-finite support
-   `⋃ₙ {|f| > 1/n}`). All convolution identities route through this.
+3. **C_c-first, density extension — no product σ-algebras at all.** Two obstructions
+   kill any `Measure.prod` route on general LCA groups: Haar on a non-σ-compact group
+   is not s-finite (Mathlib Fubini needs `SFinite`), and — worse — on
+   non-second-countable groups even the continuous kernel `(x,y) ↦ g (y⁻¹ * x)` need
+   not be product-σ-algebra measurable (this is why Mathlib's `Group/Prod.lean` demands
+   `MeasurableMul₂`). Note Ĝ can be non-σ-compact even for compact G (e.g. `Circle^I`),
+   so σ-compactness hypotheses can't be discharged by reduction. The classical fix
+   (Hewitt–Ross): prove every convolution identity for **continuous compactly
+   supported** functions, where the iterated-integral swap is elementary — approximate
+   a jointly continuous compactly supported kernel `F : X × Y → ℂ` uniformly by finite
+   sums `Σ φᵢ(x)·F(zᵢ,y)` (uniform continuity + finite cover + continuous partition of
+   unity), for which the swap is trivial — then extend all operations and identities to
+   L¹ by density and bilinear continuity. Pointwise convolution formulas are only ever
+   used for C_c functions and for L²×L² (where slice-wise Cauchy–Schwarz needs no
+   product measure). Consistency of the L¹ extension with pointwise formulas is
+   obtained through simultaneous C_c approximation in (L¹, L²) or (L¹, sup) norms.
 
 4. **Multiplicative convolution defined in-project.** Mathlib's Bochner convolution is
    additive-only; `Additive G` transport would poison every character statement. Define
@@ -62,10 +71,10 @@ deviations recorded below** (chosen after a full inventory of Mathlib v4.32.0).
 | `Basic.lean` | `eval`, `eval_apply`, inverse-from-bijective-open; finite case | ✅ done (pre-existing) |
 | `Topology.lean` | loc. compact subspace of T2 is locally closed; loc. compact subgroup closed | ✅ done |
 | `Duality.lean` | 3 core sorries + closed range + `toDoubleDual` assembly | ✅ skeleton builds |
-| `MeasureFubini.lean` | σ-finite-support lemma; restricted Fubini/Tonelli workhorse | ⬜ next |
-| `Convolution.lean` | `mconv`, `star` involution `f^*(x) = conj (f x⁻¹)`, ‖·‖₁-bound, comm, assoc, `mconv`-vs-L¹ classes, L²·L² → bounded continuous, support lemma, `g ⋆ g^*` continuity | ⬜ |
+| `CcFubini.lean` | iterated-integral swap for jointly continuous compactly supported kernels on X × Y (LCH spaces, Radon measures), via uniform continuity + finite covers + continuous partitions of unity | ⬜ next |
+| `Convolution.lean` | pointwise `mconv μ f g x = ∫ y, f y * g (y⁻¹ * x) ∂μ` used only on C_c×C_c and L²×L²; `star` involution `f^*(x) = conj (f x⁻¹)`; for C_c: membership in C_c, support lemma, ‖·‖₁-bound, comm, assoc, star identities (via CcFubini); for L²×L²: sup bound + continuity (slice-wise, no Fubini) | ⬜ |
 | `ApproximateIdentity.lean` | normalized C_c bumps on identity nbhds; translation continuity in Lp (from `Lp.compMeasurePreserving` + `DomMulAct` instance); `h_U ⋆ f → f` in L¹; `ĥ_U → 1` uniformly on compacts | ⬜ |
-| `L1Algebra.lean` | type synonym for `Lp ℂ 1 μ` with `NormedRing` (mconv), `NormedAlgebra ℂ`, `StarRing`, `CompleteSpace`; unitization norm if Mathlib lacks a Banach-algebra `Unitization` norm | ⬜ |
+| `L1Algebra.lean` | type synonym for `Lp ℂ 1 μ` with `NormedRing` whose multiplication is the **density extension** of C_c convolution (assoc/comm/norm-bound extend by continuity), `NormedAlgebra ℂ`, `StarRing`, `CompleteSpace`; unitization norm if Mathlib lacks a Banach-algebra `Unitization` norm | ⬜ |
 | `FourierTransform.lean` | `𝓕 f χ = ∫ f x * conj (χ x) ∂μ`: bounded, continuous, `∈ C₀(Ĝ)` (Riemann–Lebesgue), multiplicative on convolution, star/translation/modulation identities | ⬜ |
 | `Spectrum.lean` | every character of L¹(G) is `f ↦ 𝓕 f χ` for a unique χ (translation-ratio argument, Bochner-integral identity `f ⋆ g = ∫ f a • L_a g da`); spectral radius `r(f) = ‖𝓕 f‖_∞` via unitization | ⬜ |
 | `StoneWeierstrassC0.lean` | Stone–Weierstrass for C₀ of a locally compact T2 space via one-point compactification (absent from Mathlib) | ⬜ independent |
@@ -75,7 +84,7 @@ deviations recorded below** (chosen after a full inventory of Mathlib v4.32.0).
 | `Plancherel.lean` | Parseval on L¹∩L²; range dense; unitary `𝒫`; `𝓕(a·b) = 𝒫a ⋆ 𝒫b`; localized transform in any nonempty open ⊆ Ĝ | ⬜ |
 | `DualityProof.lean` | fill the three sorries: injectivity (inversion of a convolution square), inducing (compact polars via `∫ f̂ = 1` tail estimate), surjectivity (localized transform on Ĝ misses the closed range ⇒ FS-uniqueness contradiction) | ⬜ |
 
-Dependency spine: MeasureFubini → Convolution → {ApproximateIdentity, L1Algebra} →
+Dependency spine: CcFubini → Convolution → {ApproximateIdentity, L1Algebra} →
 FourierTransform → Spectrum → (+ StoneWeierstrassC0) → {FS-uniqueness in Bochner.lean}
 → PositiveType → Bochner → Inversion → Plancherel → DualityProof.
 Note the whole analytic stack must apply to **Ĝ** as well as G (surjectivity uses
