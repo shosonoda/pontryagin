@@ -77,8 +77,11 @@ deviations recorded below** (chosen after a full inventory of Mathlib v4.32.0).
 | `Translation.lean` | normalized C_c bumps (`exists_normalized_bump`); `mtranslate` on functions (+ all invariance lemmas); `translateLp` isometries with `continuous_translateLp` | ✅ done |
 | `ApproximateIdentity.lean` | `h_U ⋆ f → f` in L¹ (ε-estimates, no filters needed); `ĥ_U → 1` uniformly on compacts (may live in FourierTransform.lean) | ⬜ |
 | `L1Algebra.lean` | type synonym for `Lp ℂ 1 μ` with `NormedRing` whose multiplication is the **density extension** of C_c convolution (assoc/comm/norm-bound extend by continuity), `NormedAlgebra ℂ`, `StarRing`, `CompleteSpace`; unitization norm if Mathlib lacks a Banach-algebra `Unitization` norm | ⬜ |
-| `FourierTransform.lean` | `𝓕 f χ = ∫ f x * conj (χ x) ∂μ`: bounded, continuous, `∈ C₀(Ĝ)` (Riemann–Lebesgue), multiplicative on convolution, star/translation/modulation identities | ⬜ |
-| `Spectrum.lean` | every character of L¹(G) is `f ↦ 𝓕 f χ` for a unique χ (translation-ratio argument, Bochner-integral identity `f ⋆ g = ∫ f a • L_a g da`); spectral radius `r(f) = ‖𝓕 f‖_∞` via unitization | ⬜ |
+| `FourierTransform.lean` | `fourierTransform μ f χ = ∫ f x * conj (χ x) ∂μ`: bounded, continuous, Riemann–Lebesgue (`tendsto_fourierTransform_cocompact`), multiplicative on convolution, star/translation/modulation identities, uniform bump-transform smallness | ✅ done |
+| `Spectrum.lean` + `UnitizationSpectrum.lean` | `L1G.fourier/fourierC0/fourierHom`; translation on L1G; vector-integral identity; separation + nonvanishing; `characterSpace_exists_char` (every character = 𝓕-evaluation at unique χ); `exists_norm_npow_rpow_le` (Gelfand bound, unitization-free statement) | ✅ done |
+| `FiniteMeasureFubini.lean` | swap for bounded continuous kernels compactly supported in one variable vs finite inner-regular measures (cutoff + DCT); partial-integral continuity | ✅ done |
+| `DensityLp.lean` | C_c dense in Lp for p ≠ ∞ (`dense_ccLp`, `dense_ccL2`) | ✅ done |
+| `FourierDense.lean` | C_c-transform subalgebra dense in C₀(Ĝ) (S-W); bounded-continuous testing lemma; FS-uniqueness `measure_ext_of_forall_integral_char_eq` | 🔄 agent running |
 | `StoneWeierstrassC0.lean` | Stone–Weierstrass for C₀: `ZeroAtInftyContinuousMap.nonUnitalStarSubalgebra_dense_of_separatesPoints` (+ `toContinuousMapOnePoint` isometric embedding API) | ✅ done |
 | `PositiveType.lean` | finite-sum positive-definite def; elementary bounds; characters & `g ⋆ g^*` are positive-type; integral criterion; ↔ positive functional on L¹ | ⬜ |
 | `Bochner.lean` | route of deviation 1: `φ(x) = ∫ χ(x) dσ_φ`, σ_φ finite positive regular, `σ_φ(Ĝ) = φ(1)`; uniqueness | ⬜ |
