@@ -71,13 +71,14 @@ deviations recorded below** (chosen after a full inventory of Mathlib v4.32.0).
 | `Basic.lean` | `eval`, `eval_apply`, inverse-from-bijective-open; finite case | ✅ done (pre-existing) |
 | `Topology.lean` | loc. compact subspace of T2 is locally closed; loc. compact subgroup closed | ✅ done |
 | `Duality.lean` | 3 core sorries + closed range + `toDoubleDual` assembly | ✅ skeleton builds |
-| `CcFubini.lean` | iterated-integral swap for jointly continuous compactly supported kernels on X × Y (LCH spaces, Radon measures), via uniform continuity + finite covers + continuous partitions of unity | ⬜ next |
+| `CcFubini.lean` | iterated-integral swap for jointly continuous compactly supported kernels + slice/partial-integral/bound lemmas. (Discovery: Mathlib's `integral_integral_swap_of_hasCompactSupport` already handles the swap — compact support ⇒ separable range ⇒ product measurability — needing only `OpensMeasurableSpace` + `IsFiniteMeasureOnCompacts`.) | ✅ done |
 | `Convolution.lean` | pointwise `mconv μ f g x = ∫ y, f y * g (y⁻¹ * x) ∂μ` used only on C_c×C_c and L²×L²; `star` involution `f^*(x) = conj (f x⁻¹)`; for C_c: membership in C_c, support lemma, ‖·‖₁-bound, comm, assoc, star identities (via CcFubini); for L²×L²: sup bound + continuity (slice-wise, no Fubini) | ⬜ |
-| `ApproximateIdentity.lean` | normalized C_c bumps on identity nbhds; translation continuity in Lp (from `Lp.compMeasurePreserving` + `DomMulAct` instance); `h_U ⋆ f → f` in L¹; `ĥ_U → 1` uniformly on compacts | ⬜ |
+| `Translation.lean` | normalized C_c bumps (`exists_normalized_bump`); `mtranslate` on functions (+ all invariance lemmas); `translateLp` isometries with `continuous_translateLp` | ✅ done |
+| `ApproximateIdentity.lean` | `h_U ⋆ f → f` in L¹ (ε-estimates, no filters needed); `ĥ_U → 1` uniformly on compacts (may live in FourierTransform.lean) | ⬜ |
 | `L1Algebra.lean` | type synonym for `Lp ℂ 1 μ` with `NormedRing` whose multiplication is the **density extension** of C_c convolution (assoc/comm/norm-bound extend by continuity), `NormedAlgebra ℂ`, `StarRing`, `CompleteSpace`; unitization norm if Mathlib lacks a Banach-algebra `Unitization` norm | ⬜ |
 | `FourierTransform.lean` | `𝓕 f χ = ∫ f x * conj (χ x) ∂μ`: bounded, continuous, `∈ C₀(Ĝ)` (Riemann–Lebesgue), multiplicative on convolution, star/translation/modulation identities | ⬜ |
 | `Spectrum.lean` | every character of L¹(G) is `f ↦ 𝓕 f χ` for a unique χ (translation-ratio argument, Bochner-integral identity `f ⋆ g = ∫ f a • L_a g da`); spectral radius `r(f) = ‖𝓕 f‖_∞` via unitization | ⬜ |
-| `StoneWeierstrassC0.lean` | Stone–Weierstrass for C₀ of a locally compact T2 space via one-point compactification (absent from Mathlib) | ⬜ independent |
+| `StoneWeierstrassC0.lean` | Stone–Weierstrass for C₀: `ZeroAtInftyContinuousMap.nonUnitalStarSubalgebra_dense_of_separatesPoints` (+ `toContinuousMapOnePoint` isometric embedding API) | ✅ done |
 | `PositiveType.lean` | finite-sum positive-definite def; elementary bounds; characters & `g ⋆ g^*` are positive-type; integral criterion; ↔ positive functional on L¹ | ⬜ |
 | `Bochner.lean` | route of deviation 1: `φ(x) = ∫ χ(x) dσ_φ`, σ_φ finite positive regular, `σ_φ(Ĝ) = φ(1)`; uniqueness | ⬜ |
 | `Inversion.lean` | `e_U = h_U ⋆ h_U^*`; symmetric identity; dual Haar `μ_Ĝ`; inversion for positive-type L¹ functions; `f̂ ≥ 0`, `∫ f̂ dμ_Ĝ = f 1` | ⬜ |
@@ -113,6 +114,15 @@ algebra structure; positive-definite functions + Bochner; complex RMK / C₀-dua
 L¹–L∞ duality (avoided); Stone–Weierstrass for C₀; LCA Fourier transform/inversion/
 Plancherel; compact lifting through quotients (not needed in new route); spectral
 theorem for normal operators (avoided); Fubini without s-finiteness (worked around).
+
+Additional module landed:
+- `Density.lean` ✅: `norm_L1_le_of_forall_integral_le`, `ae_eq_zero_of_forall_integral_mul_eq_zero`
+  (L¹ separation by C_c testing), plus `exists_hasCompactSupport_integral_norm_sub_le`
+  (C_c dense in L¹) — reproved locally because Mathlib's `ContinuousMapDense` section
+  requires `[NormalSpace α]`, which LC+T2 does NOT imply. **Watch-out:** any later use
+  of `MemLp.exists_hasCompactSupport_eLpNorm_sub_le` etc. from Mathlib is unavailable;
+  when Plancherel needs C_c dense in L², extend Density.lean's construction
+  (`MemLp.induction_dense` + regularity + LC Urysohn) to general `p ≠ ∞`.
 
 ## Watch-outs
 
