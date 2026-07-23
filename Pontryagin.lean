@@ -8,6 +8,7 @@ import Pontryagin.DualPolars
 import Pontryagin.FiniteMeasureFubini
 import Pontryagin.FourierDense
 import Pontryagin.FourierTransform
+import Pontryagin.Inversion
 import Pontryagin.L1Algebra
 import Pontryagin.PositiveType
 import Pontryagin.Spectrum
