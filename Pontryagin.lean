@@ -11,6 +11,7 @@ import Pontryagin.FourierDense
 import Pontryagin.FourierTransform
 import Pontryagin.Inversion
 import Pontryagin.L1Algebra
+import Pontryagin.Plancherel
 import Pontryagin.PositiveType
 import Pontryagin.Spectrum
 import Pontryagin.StoneWeierstrassC0

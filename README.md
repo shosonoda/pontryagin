@@ -2,6 +2,14 @@
 
 A formalization challenge: **Pontryagin duality for locally compact abelian groups**, in Lean 4 / Mathlib, verified with [leanprover/comparator](https://github.com/leanprover/comparator).
 
+> **Status: solved.** [`Solution.lean`](Solution.lean) proves the challenge theorem with no
+> `sorry`, using only the permitted axioms (`propext`, `Classical.choice`, `Quot.sound`).
+> The proof (~14,000 lines under [`Pontryagin/`](Pontryagin/)) follows the classical
+> analytic route — L¹ convolution algebra, Gelfand spectrum, Bochner's theorem via
+> positive functionals, the dual Haar measure, Fourier inversion, and Plancherel theory —
+> with no σ-compactness or second-countability assumptions. See [`PLAN.md`](PLAN.md) for
+> the architecture and `data/` for the proof blueprint.
+
 ## The challenge
 
 [`Challenge.lean`](Challenge.lean) states the goal:

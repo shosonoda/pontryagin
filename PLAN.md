@@ -1,9 +1,8 @@
 # Formalization plan: Pontryagin duality for LCA groups
 
-Goal: remove the three `sorry`s in [Pontryagin/Duality.lean](Pontryagin/Duality.lean)
-(`eval_injective`, `isInducing_eval`, `eval_surjective`). Everything else —
-the closed-range step, the final `toDoubleDual` assembly, and `Solution.lean` — is done
-and builds.
+**STATUS: COMPLETE.** `Solution.lean` proves `pontryagin_duality` with zero sorries;
+`#print axioms pontryagin_duality` reports exactly `[propext, Classical.choice, Quot.sound]`.
+This document records the architecture for reference.
 
 Reference: the proof blueprint in `data/pontryagin_duality_mathlib.tex`, **with the
 deviations recorded below** (chosen after a full inventory of Mathlib v4.32.0).
