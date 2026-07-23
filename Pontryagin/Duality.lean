@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: The pontryagin contributors
 -/
 import Pontryagin.Basic
+import Pontryagin.EvalInjective
 import Pontryagin.Topology
 
 /-!
@@ -33,13 +34,13 @@ variable (G : Type*) [CommGroup G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G] [T2Space G]
 
 /-- **Characters separate points**: the evaluation map into the double dual is injective. -/
-theorem eval_injective : Injective (eval : G → PontryaginDual (PontryaginDual G)) := by
-  sorry
+theorem eval_injective : Injective (eval : G → PontryaginDual (PontryaginDual G)) :=
+  eval_injective_aux G
 
 /-- The evaluation map is inducing: the topology of `G` is recovered from uniform
 convergence of characters on compact sets of the dual. -/
-theorem isInducing_eval : IsInducing (eval : G → PontryaginDual (PontryaginDual G)) := by
-  sorry
+theorem isInducing_eval : IsInducing (eval : G → PontryaginDual (PontryaginDual G)) :=
+  isInducing_eval_aux G
 
 /-- The evaluation map is surjective: every character of the dual group is an evaluation. -/
 theorem eval_surjective : Surjective (eval : G → PontryaginDual (PontryaginDual G)) := by

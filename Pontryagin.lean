@@ -5,6 +5,7 @@ import Pontryagin.Convolution
 import Pontryagin.Density
 import Pontryagin.DensityLp
 import Pontryagin.DualPolars
+import Pontryagin.EvalInjective
 import Pontryagin.FiniteMeasureFubini
 import Pontryagin.FourierDense
 import Pontryagin.FourierTransform
