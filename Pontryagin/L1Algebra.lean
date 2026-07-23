@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: The pontryagin contributors
 -/
 import Pontryagin.Convolution
-import Pontryagin.Density
+import Pontryagin.Mathlib.Density
 import Mathlib.Analysis.Normed.Operator.Bilinear
 import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.Analysis.CStarAlgebra.Basic
@@ -16,7 +16,7 @@ For a locally compact Hausdorff abelian group `G` with regular Haar measure `μ`
 equips (a type synonym of) `Lp ℂ 1 μ` with the structure of a commutative non-unital Banach
 `*`-algebra whose multiplication is the **density extension** of the convolution of continuous
 compactly supported functions.  No product measures or product σ-algebras appear anywhere:
-convolution is only ever computed pointwise on `C_c × C_c` (where `Pontryagin.CcFubini`
+convolution is only ever computed pointwise on `C_c × C_c` (where `Pontryagin.Mathlib.CcFubini`
 provides the iterated-integral manipulations) and then extended to all of `L¹` by bilinear
 continuity along the dense subspace of `C_c` classes.
 
@@ -62,6 +62,8 @@ set_option linter.unusedSectionVars false
 -- `show` is used pervasively to cross the definitional equality between the type synonym
 -- `L1G μ` and `Lp ℂ 1 μ`, and to beta-reduce integrands.
 set_option linter.style.show false
+
+namespace MeasureTheory
 
 variable {G : Type*} [CommGroup G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G] [T2Space G] [MeasurableSpace G] [BorelSpace G]
@@ -138,11 +140,6 @@ theorem toLpCc_congr {f g : G → ℂ} (hfc : Continuous f) (hfs : HasCompactSup
     toLpCc μ f hfc hfs = toLpCc μ g hgc hgs := by
   subst h; rfl
 
-/-- Continuous a.e.-representatives are unique (Haar measure is open-positive). -/
-theorem cc_rep_unique {f g : G → ℂ} (hf : Continuous f) (hg : Continuous g)
-    (h : f =ᵐ[μ] g) : f = g :=
-  (hf.ae_eq_iff_eq μ hg).mp h
-
 /-- The `L¹` norm of a `C_c` class is the integral of the norm. -/
 theorem norm_toLpCc (f : G → ℂ) (hfc : Continuous f) (hfs : HasCompactSupport f) :
     ‖toLpCc μ f hfc hfs‖ = ∫ x, ‖f x‖ ∂μ := by
@@ -153,10 +150,7 @@ theorem norm_toLpCc (f : G → ℂ) (hfc : Continuous f) (hfs : HasCompactSuppor
 
 /-- The `L¹` norm of a difference, as an integral. -/
 theorem norm_sub_eq_integral (F K : Lp ℂ 1 μ) : ‖F - K‖ = ∫ x, ‖F x - K x‖ ∂μ := by
-  rw [L1.norm_eq_integral_norm]
-  refine integral_congr_ae ?_
-  filter_upwards [Lp.coeFn_sub F K] with x hx
-  rw [hx, Pi.sub_apply]
+  simpa only [dist_eq_norm] using L1.dist_eq_integral_dist F K
 
 /-- The subspace of `L¹` classes possessing a continuous compactly supported
 representative. -/
@@ -228,25 +222,25 @@ private theorem ccSubmodule_mem_def (F : ccSubmodule μ) :
 
 /-- A choice of continuous compactly supported representative for an element of
 `ccSubmodule μ`. -/
-def ccRep (F : ccSubmodule μ) : G → ℂ :=
+private def ccRep (F : ccSubmodule μ) : G → ℂ :=
   (ccSubmodule_mem_def μ F).choose
 
-theorem ccRep_continuous (F : ccSubmodule μ) : Continuous (ccRep μ F) :=
+private theorem ccRep_continuous (F : ccSubmodule μ) : Continuous (ccRep μ F) :=
   (ccSubmodule_mem_def μ F).choose_spec.1
 
-theorem ccRep_hasCompactSupport (F : ccSubmodule μ) : HasCompactSupport (ccRep μ F) :=
+private theorem ccRep_hasCompactSupport (F : ccSubmodule μ) : HasCompactSupport (ccRep μ F) :=
   (ccSubmodule_mem_def μ F).choose_spec.2.1
 
-theorem coeFn_ccRep (F : ccSubmodule μ) : ⇑(F : Lp ℂ 1 μ) =ᵐ[μ] ccRep μ F :=
+private theorem coeFn_ccRep (F : ccSubmodule μ) : ⇑(F : Lp ℂ 1 μ) =ᵐ[μ] ccRep μ F :=
   (ccSubmodule_mem_def μ F).choose_spec.2.2
 
-theorem ccRep_add (F K : ccSubmodule μ) :
+private theorem ccRep_add (F K : ccSubmodule μ) :
     ccRep μ (F + K) =ᵐ[μ] ccRep μ F + ccRep μ K :=
   (coeFn_ccRep μ (F + K)).symm.trans
     ((Lp.coeFn_add (F : Lp ℂ 1 μ) (K : Lp ℂ 1 μ)).trans
       ((coeFn_ccRep μ F).add (coeFn_ccRep μ K)))
 
-theorem ccRep_smul (c : ℂ) (F : ccSubmodule μ) :
+private theorem ccRep_smul (c : ℂ) (F : ccSubmodule μ) :
     ccRep μ (c • F) =ᵐ[μ] c • ccRep μ F :=
   (coeFn_ccRep μ (c • F)).symm.trans
     ((Lp.coeFn_smul c (F : Lp ℂ 1 μ)).trans ((coeFn_ccRep μ F).const_smul c))
@@ -360,7 +354,7 @@ end CcMul
 section MulCLM
 
 /-- First extension: `C_c` convolution, extended to an `L¹` first argument. -/
-def mulCLMAux : Lp ℂ 1 μ →L[ℂ] ccSubmodule μ →L[ℂ] Lp ℂ 1 μ :=
+private def mulCLMAux : Lp ℂ 1 μ →L[ℂ] ccSubmodule μ →L[ℂ] Lp ℂ 1 μ :=
   (ccMulCLM μ).extend (ccSubmodule μ).subtypeL
 
 /-- **Convolution as a continuous bilinear multiplication on `L¹(G)`**, obtained from
@@ -816,7 +810,7 @@ theorem exists_bump_mconv_close (v : G → ℂ) (hv : Continuous v)
       ≤ ∫ x, ∫ y, h y * ‖v (y⁻¹ * x) - v x‖ ∂μ ∂μ :=
         integral_mono hdiff_int (integrable_integral_right hWc hWsupp) hpt
     _ = ∫ y, ∫ x, h y * ‖v (y⁻¹ * x) - v x‖ ∂μ ∂μ :=
-        integral_integral_swap_of_continuous_compactSupport hWc hWsupp
+        integral_integral_swap_of_hasCompactSupport hWc hWsupp
     _ = ∫ y, h y * φ y ∂μ := integral_congr_ae (Eventually.of_forall hinner)
     _ ≤ ∫ y, h y * ε ∂μ := integral_mono hint_left hint_right hle
     _ = ε := by rw [integral_mul_const, hint, one_mul]
@@ -894,3 +888,5 @@ theorem exists_bump_mul_close (F : L1G μ) {ε : ℝ} (hε : 0 < ε) :
 end L1G
 
 end ApproximateIdentity
+
+end MeasureTheory

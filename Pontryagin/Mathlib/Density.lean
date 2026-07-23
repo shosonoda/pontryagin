@@ -15,6 +15,9 @@ import Mathlib.Topology.UrysohnsLemma
 /-!
 # `L¹` functions are determined by testing against `C_c`
 
+This file fills a gap in Mathlib (general-purpose material with no project-specific content)
+and is a candidate for upstreaming; see `UPSTREAMING.md` for the audit and target locations.
+
 Let `X` be a locally compact Hausdorff space equipped with a regular Borel measure `μ`.
 This file proves that an integrable function `u : X → ℂ` is determined, up to a.e.
 equality, by the integrals `∫ x, u x * φ x ∂μ` against continuous compactly supported
@@ -41,6 +44,8 @@ noncomputable section
 
 open MeasureTheory Filter Set Function Topology ComplexConjugate
 open scoped ENNReal
+
+namespace MeasureTheory
 
 variable {X : Type*} [TopologicalSpace X] [T2Space X] [LocallyCompactSpace X]
   [MeasurableSpace X] [BorelSpace X] {μ : Measure X} [μ.Regular]
@@ -282,3 +287,5 @@ theorem ae_eq_zero_of_forall_integral_mul_eq_zero {u : X → ℂ} (hu : Integrab
       (le_antisymm h0 (integral_nonneg fun x => norm_nonneg _))
   filter_upwards [h1] with x hx
   simpa using hx
+
+end MeasureTheory

@@ -44,7 +44,7 @@ with the points of the Pontryagin dual, via the Fourier transform.
 
 noncomputable section
 
-open Filter Function MeasureTheory Set Topology WeakDual WeakDual.CharacterSpace
+open Filter Function MeasureTheory Set Topology WeakDual WeakDual.CharacterSpace PontryaginDual
 open scoped ComplexConjugate ENNReal ZeroAtInfty
 
 -- The sections below deliberately use one coarse hypothesis block (locally compact Hausdorff
@@ -54,6 +54,8 @@ set_option linter.unusedSectionVars false
 -- `show` is used pervasively to cross the definitional equality between the type synonym
 -- `L1G μ` and `Lp ℂ 1 μ`, and to beta-reduce integrands.
 set_option linter.style.show false
+
+namespace MeasureTheory
 
 variable {G : Type*} [CommGroup G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G] [T2Space G] [MeasurableSpace G] [BorelSpace G]
@@ -419,7 +421,7 @@ theorem toLpCc_mconv_eq_integral (f g : G → ℂ) (hfc : Continuous f)
             refine integral_congr_ae (Eventually.of_forall fun x => ?_)
             exact (integral_mul_const _ _).symm
         _ = ∫ a, ∫ x, f a * g (a⁻¹ * x) * h x ∂μ ∂μ :=
-            integral_integral_swap_of_continuous_compactSupport hkc hks
+            integral_integral_swap_of_hasCompactSupport hkc hks
     rw [hDpair, hL, hR, hswap, sub_self]
   have hae : ⇑(toLpCc μ (mconv μ f g) (hfc.mconv μ hfs hgc hgs) (hfs.mconv μ hgs)
       - ∫ a, f a • translateLp μ 1 a (toLpCc μ g hgc hgs) ∂μ : Lp ℂ 1 μ) =ᵐ[μ] 0 :=
@@ -433,7 +435,7 @@ end VectorConvolution
 section Separation
 
 /-- **Fourier transforms of `C_c` functions separate characters.** -/
-theorem fourierTransform_separates {χ χ' : PontryaginDual G} (hne : χ ≠ χ') :
+theorem _root_.PontryaginDual.fourierTransform_separates {χ χ' : PontryaginDual G} (hne : χ ≠ χ') :
     ∃ f : G → ℂ, Continuous f ∧ HasCompactSupport f ∧
       fourierTransform μ f χ ≠ fourierTransform μ f χ' := by
   -- a point where the characters differ, and the difference of conjugates
@@ -536,7 +538,7 @@ theorem fourierTransform_separates {χ χ' : PontryaginDual G} (hne : χ ≠ χ'
 
 /-- **Non-vanishing**: at every character `χ` there is a `C_c` function whose Fourier
 transform equals `1` at `χ` (a normalized bump times the character). -/
-theorem exists_fourierTransform_eq_one (χ : PontryaginDual G) :
+theorem _root_.PontryaginDual.exists_fourierTransform_eq_one (χ : PontryaginDual G) :
     ∃ f : G → ℂ, Continuous f ∧ HasCompactSupport f ∧ fourierTransform μ f χ = 1 := by
   obtain ⟨h₀, hc, hs, h0, -, hint⟩ := exists_normalized_bump μ Set.univ Filter.univ_mem
   refine ⟨fun x => ((h₀ x : ℝ) : ℂ) * (χ x : ℂ),
@@ -587,9 +589,9 @@ theorem characterSpace_exists_char (φ : characterSpace ℂ (L1G μ)) :
   have hkey : ∀ (a : G) (F : L1G μ), φ (translate μ a F) = q a * φ F := by
     intro a F
     have h1 : φ (translate μ a (F * G₀)) = φ (translate μ a F) * φ G₀ := by
-      rw [translate_mul μ a F G₀, map_mul φ]
+      rw [translate_mul μ a F G₀, _root_.map_mul φ]
     have h2 : φ (translate μ a (F * G₀)) = φ (translate μ a G₀) * φ F := by
-      rw [mul_comm F G₀, translate_mul μ a G₀ F, map_mul φ]
+      rw [mul_comm F G₀, translate_mul μ a G₀ F, _root_.map_mul φ]
     have h3 : φ (translate μ a F) * φ G₀ = φ (translate μ a G₀) * φ F := h1.symm.trans h2
     simp only [hq]
     field_simp
@@ -643,9 +645,9 @@ theorem characterSpace_exists_char (φ : characterSpace ℂ (L1G μ)) :
   set χ : PontryaginDual G :=
     { toFun := fun x => ⟨conj (q x), mem_sphere_zero_iff_norm.mpr
         (by rw [RCLike.norm_conj]; exact hqnorm x)⟩
-      map_one' := Circle.ext (show conj (q 1) = 1 by rw [hq1, map_one])
+      map_one' := Circle.ext (show conj (q 1) = 1 by rw [hq1, _root_.map_one])
       map_mul' := fun x y => Circle.ext
-        (show conj (q (x * y)) = conj (q x) * conj (q y) by rw [hqmul, map_mul])
+        (show conj (q (x * y)) = conj (q x) * conj (q y) by rw [hqmul, _root_.map_mul])
       continuous_toFun := Continuous.subtype_mk
         (Complex.continuous_conj.comp hqcont) _ } with hχ
   have hχconj : ∀ x : G, conj ((χ x : Circle) : ℂ) = q x := fun x => by
@@ -666,7 +668,7 @@ theorem characterSpace_exists_char (φ : characterSpace ℂ (L1G μ)) :
     have hL : toCLM φ (toLpCc μ (mconv μ f g₀) (hfc.mconv μ hfs hg₀c hg₀s)
         (hfs.mconv μ hg₀s)) = φ (ofLp μ (toLpCc μ f hfc hfs)) * φ G₀ := by
       show φ (ofLp μ (toLpCc μ (mconv μ f g₀) _ _)) = _
-      rw [h1, map_mul φ]
+      rw [h1, _root_.map_mul φ]
     -- the right side is `(∫ f·q) · φ(G₀)`
     have hpt : ∀ a : G, toCLM φ (f a • translateLp μ 1 a (toLpCc μ g₀ hg₀c hg₀s))
         = f a * q a * φ G₀ := by
@@ -709,3 +711,5 @@ theorem characterSpace_exists_char (φ : characterSpace ℂ (L1G μ)) :
 end L1G
 
 end CharacterSpace
+
+end MeasureTheory

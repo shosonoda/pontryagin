@@ -12,14 +12,17 @@ import Mathlib.Topology.UrysohnsLemma
 /-!
 # Density of `C_c` in `Lᵖ` on locally compact Hausdorff spaces
 
+This file fills a gap in Mathlib (general-purpose material with no project-specific content)
+and is a candidate for upstreaming; see `UPSTREAMING.md` for the audit and target locations.
+
 Let `X` be a locally compact Hausdorff space equipped with a regular Borel measure `μ`.
 This file proves that continuous compactly supported functions are dense in `Lᵖ(μ)` for
-every exponent `p ≠ ∞`, generalizing the `p = 1` results of `Pontryagin.Density`.
+every exponent `p ≠ ∞`, generalizing the `p = 1` results of `Pontryagin.Mathlib.Density`.
 
 Mathlib's `MeasureTheory/Function/ContinuousMapDense.lean` proves the same statements
 under a `[NormalSpace α]` hypothesis, which fails for general locally compact Hausdorff
 spaces; here the normal-space Urysohn lemma is replaced by the locally compact one
-(`exists_continuous_one_zero_of_isCompact`), exactly as in `Pontryagin.Density`.  The names
+(`exists_continuous_one_zero_of_isCompact`), exactly as in `Pontryagin.Mathlib.Density`.  The names
 carry a prime to avoid clashing with the Mathlib versions.
 
 ## Main results
@@ -34,7 +37,7 @@ carry a prime to avoid clashing with the Mathlib versions.
   supported representative is dense (for `1 ≤ p`, `p ≠ ∞`); the special case `p = 2`
   (`dense_ccL2`) is what the Plancherel layer consumes.
 
-The proofs mirror `Pontryagin.Density` step by step: the only `p`-specific ingredients,
+The proofs mirror `Pontryagin.Mathlib.Density` step by step: the only `p`-specific ingredients,
 `MeasureTheory.exists_Lp_half` and `MeasureTheory.exists_eLpNorm_indicator_le`, are already
 available in Mathlib for arbitrary `p ≠ ∞`.
 -/
@@ -44,13 +47,15 @@ noncomputable section
 open MeasureTheory Filter Set Function Topology
 open scoped ENNReal
 
+namespace MeasureTheory
+
 variable {X : Type*} [TopologicalSpace X] [T2Space X] [LocallyCompactSpace X]
   [MeasurableSpace X] [BorelSpace X] {μ : Measure X} [μ.Regular]
 
 /-- On a locally compact Hausdorff space with a regular measure, the (scaled) indicator
 function of a measurable set of finite measure can be approximated in the `Lᵖ` seminorm,
 `p ≠ ∞`, by continuous compactly supported functions.  Generalization of
-`exists_continuous_eLpNorm_indicator_sub_le` (the `p = 1` case in `Pontryagin.Density`);
+`exists_continuous_eLpNorm_indicator_sub_le` (the `p = 1` case in `Pontryagin.Mathlib.Density`);
 variant of `MeasureTheory.exists_continuous_eLpNorm_sub_le_of_closed` without the
 `NormalSpace` hypothesis. -/
 theorem exists_continuous_eLpNorm_indicator_sub_le' (p : ℝ≥0∞) (hp : p ≠ ∞) (c : ℂ)
@@ -120,7 +125,7 @@ regular measure: a `MemLp` function can be approximated in the `Lᵖ` seminorm b
 compactly supported functions.  Variant of
 `MeasureTheory.MemLp.exists_hasCompactSupport_eLpNorm_sub_le` without the `NormalSpace`
 assumption (whence the prime). -/
-theorem MeasureTheory.MemLp.exists_hasCompactSupport_eLpNorm_sub_le' {p : ℝ≥0∞}
+theorem MemLp.exists_hasCompactSupport_eLpNorm_sub_le' {p : ℝ≥0∞}
     (hp : p ≠ ∞) {f : X → ℂ} (hf : MemLp f p μ) {ε : ℝ≥0∞} (hε : ε ≠ 0) :
     ∃ g : X → ℂ, Continuous g ∧ HasCompactSupport g ∧ MemLp g p μ ∧
       eLpNorm (f - g) p μ ≤ ε := by
@@ -171,3 +176,5 @@ theorem dense_ccL2 :
     Dense {F : Lp ℂ 2 μ |
       ∃ f : X → ℂ, Continuous f ∧ HasCompactSupport f ∧ ⇑F =ᵐ[μ] f} :=
   dense_ccLp 2 ENNReal.ofNat_ne_top
+
+end MeasureTheory

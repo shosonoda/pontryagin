@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: The pontryagin contributors
 -/
 import Pontryagin.Inversion
-import Pontryagin.DensityLp
+import Pontryagin.Mathlib.DensityLp
 import Pontryagin.Spectrum
 import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 import Mathlib.Analysis.InnerProductSpace.LinearMap
@@ -43,7 +43,7 @@ this file develops the `L²` theory of the Fourier transform.
 
 noncomputable section
 
-open Filter Function MeasureTheory Set Topology
+open Filter Function MeasureTheory Set Topology PontryaginDual
 open scoped ComplexConjugate ComplexOrder ENNReal NNReal Pointwise ZeroAtInfty
 
 -- The sections below deliberately use one coarse hypothesis block (locally compact Hausdorff
@@ -52,6 +52,8 @@ set_option linter.unusedSectionVars false
 
 -- `show` is used pervasively to beta-reduce integrands.
 set_option linter.style.show false
+
+namespace MeasureTheory
 
 /-! ### The clamp inequality on `ℂ`
 
@@ -88,7 +90,7 @@ theorem norm_sub_smul_div_max_le {M : ℝ} (hM : 0 < M) (w z : ℂ) (hw : ‖w�
         = ‖w‖ ^ 2 + t ^ 2 * ‖z‖ ^ 2 - 2 * (t * (w * conj z).re) := by
       intro t
       have h1 : conj ((t : ℂ) * z) = (t : ℂ) * conj z := by
-        rw [map_mul, Complex.conj_ofReal]
+        rw [_root_.map_mul, Complex.conj_ofReal]
       have h2 : (w * ((t : ℂ) * conj z)).re = t * (w * conj z).re := by
         rw [mul_left_comm, Complex.re_ofReal_mul]
       calc ‖w - t • z‖ ^ 2
@@ -695,7 +697,7 @@ theorem isUniformInducing_ccL2SubtypeL : IsUniformInducing ⇑(ccL2Submodule μ)
   isUniformEmbedding_subtype_val.isUniformInducing
 
 /-- A workhorse: two continuous functions on `L²` agreeing on all `C_c` classes are equal. -/
-theorem funext_of_denseL2 {X : Type*} [TopologicalSpace X] [T2Space X]
+private theorem funext_of_denseL2 {X : Type*} [TopologicalSpace X] [T2Space X]
     (T S : Lp ℂ 2 μ → X) (hT : Continuous T) (hS : Continuous S)
     (h : ∀ (v : G → ℂ) (hvc : Continuous v) (hvs : HasCompactSupport v),
       T (toLp2Cc μ v hvc hvs) = S (toLp2Cc μ v hvc hvs)) (F : Lp ℂ 2 μ) :
@@ -715,20 +717,20 @@ private theorem ccL2_mem_def (F : ccL2Submodule μ) :
 
 /-- A choice of continuous compactly supported representative for an element of
 `ccL2Submodule μ`. -/
-def ccRep2 (F : ccL2Submodule μ) : G → ℂ :=
+private def ccRep2 (F : ccL2Submodule μ) : G → ℂ :=
   (ccL2_mem_def μ F).choose
 
-theorem ccRep2_continuous (F : ccL2Submodule μ) : Continuous (ccRep2 μ F) :=
+private theorem ccRep2_continuous (F : ccL2Submodule μ) : Continuous (ccRep2 μ F) :=
   (ccL2_mem_def μ F).choose_spec.1
 
-theorem ccRep2_hasCompactSupport (F : ccL2Submodule μ) :
+private theorem ccRep2_hasCompactSupport (F : ccL2Submodule μ) :
     HasCompactSupport (ccRep2 μ F) :=
   (ccL2_mem_def μ F).choose_spec.2.1
 
-theorem coeFn_ccRep2 (F : ccL2Submodule μ) : ⇑(F : Lp ℂ 2 μ) =ᵐ[μ] ccRep2 μ F :=
+private theorem coeFn_ccRep2 (F : ccL2Submodule μ) : ⇑(F : Lp ℂ 2 μ) =ᵐ[μ] ccRep2 μ F :=
   (ccL2_mem_def μ F).choose_spec.2.2
 
-theorem ccRep2_integrable (F : ccL2Submodule μ) : Integrable (ccRep2 μ F) μ :=
+private theorem ccRep2_integrable (F : ccL2Submodule μ) : Integrable (ccRep2 μ F) μ :=
   (ccRep2_continuous μ F).integrable_of_hasCompactSupport (ccRep2_hasCompactSupport μ F)
 
 end CcL2
@@ -755,7 +757,7 @@ theorem ccPlancherel_eq {F : ccL2Submodule μ} {v : G → ℂ} (hvc : Continuous
     ccPlancherel μ F
       = (memLp_two_fourierTransform_cc μ hvc hvs).toLp (fourierTransform μ v) := by
   have hrep : ccRep2 μ F = v :=
-    cc_rep_unique μ (ccRep2_continuous μ F) hvc ((coeFn_ccRep2 μ F).symm.trans hv)
+    ((ccRep2_continuous μ F).ae_eq_iff_eq μ hvc).mp ((coeFn_ccRep2 μ F).symm.trans hv)
   refine Lp.ext ?_
   refine (coeFn_ccPlancherel μ F).trans ?_
   rw [hrep]
@@ -779,8 +781,8 @@ def ccPlancherelₗ : ccL2Submodule μ →ₗ[ℂ] Lp ℂ 2 (dualHaar μ) where
     have hFi := ccRep2_integrable μ F
     have hKi := ccRep2_integrable μ K
     have hadd : ccRep2 μ (F + K) = ccRep2 μ F + ccRep2 μ K := by
-      refine cc_rep_unique μ (ccRep2_continuous μ (F + K))
-        ((ccRep2_continuous μ F).add (ccRep2_continuous μ K)) ?_
+      refine ((ccRep2_continuous μ (F + K)).ae_eq_iff_eq μ
+        ((ccRep2_continuous μ F).add (ccRep2_continuous μ K))).mp ?_
       refine (coeFn_ccRep2 μ (F + K)).symm.trans ?_
       refine (Lp.coeFn_add (F : Lp ℂ 2 μ) (K : Lp ℂ 2 μ)).trans ?_
       exact (coeFn_ccRep2 μ F).add (coeFn_ccRep2 μ K)
@@ -794,8 +796,8 @@ def ccPlancherelₗ : ccL2Submodule μ →ₗ[ℂ] Lp ℂ 2 (dualHaar μ) where
     rfl
   map_smul' c F := by
     have hsmul : ccRep2 μ (c • F) = c • ccRep2 μ F := by
-      refine cc_rep_unique μ (ccRep2_continuous μ (c • F))
-        ((ccRep2_continuous μ F).const_smul c) ?_
+      refine ((ccRep2_continuous μ (c • F)).ae_eq_iff_eq μ
+        ((ccRep2_continuous μ F).const_smul c)).mp ?_
       refine (coeFn_ccRep2 μ (c • F)).symm.trans ?_
       refine (Lp.coeFn_smul c (F : Lp ℂ 2 μ)).trans ?_
       exact (coeFn_ccRep2 μ F).const_smul c
@@ -1003,7 +1005,7 @@ private theorem integral_fourier_mul_cc_dual {u : PontryaginDual G → ℂ}
         show fourierTransform μ f χ * u χ = _
         rw [fourierTransform_apply, ← integral_mul_const]
     _ = ∫ y, ∫ χ, f y * conj ((χ y : Circle) : ℂ) * u χ ∂(dualHaar μ) ∂μ :=
-        integral_integral_swap_of_continuous_compactSupport hFc hFs
+        integral_integral_swap_of_hasCompactSupport hFc hFs
     _ = ∫ y, f y * ∫ χ, conj ((χ y : Circle) : ℂ) * u χ ∂(dualHaar μ) ∂μ := by
         refine integral_congr_ae (Eventually.of_forall fun y => ?_)
         show ∫ χ, f y * conj ((χ y : Circle) : ℂ) * u χ ∂(dualHaar μ)
@@ -1231,7 +1233,7 @@ theorem surjective_plancherelLI : Function.Surjective ⇑(plancherelLI μ) := by
         refine integral_congr_ae ?_
         filter_upwards [MemLp.coeFn_toLp (memLp_two_fourierTransform_cc μ htr_c htr_s)]
           with χ hχ
-        rw [RCLike.inner_apply, hχ, fourierTransform_mtranslate μ v x χ, map_mul,
+        rw [RCLike.inner_apply, hχ, fourierTransform_mtranslate μ v x χ, _root_.map_mul,
           RCLike.conj_conj]
         ring
       rw [← hid]
@@ -1327,7 +1329,7 @@ variable [mΓ : MeasurableSpace (PontryaginDual G)] [BorelSpace (PontryaginDual 
 
 /-- Conjugate-modulation under the Fourier transform:
 `𝓕(conj v ⬝ η)(χ) = conj (𝓕v (χ⁻¹ ⬝ η))`. -/
-theorem fourierTransform_conj_mul_char (v : G → ℂ) (η χ : PontryaginDual G) :
+theorem _root_.PontryaginDual.fourierTransform_conj_mul_char (v : G → ℂ) (η χ : PontryaginDual G) :
     fourierTransform μ (fun x => conj (v x) * ((η x : Circle) : ℂ)) χ
       = conj (fourierTransform μ v (χ⁻¹ * η)) := by
   rw [fourierTransform_apply, fourierTransform_apply, ← integral_conj]
@@ -1339,7 +1341,7 @@ theorem fourierTransform_conj_mul_char (v : G → ℂ) (η χ : PontryaginDual G
     rw [show (χ⁻¹ * η) x = (χ x)⁻¹ * η x from rfl, Circle.coe_mul, Circle.coe_inv_eq_conj]
   have h2 : conj (v x * conj (((χ⁻¹ * η) x : Circle) : ℂ))
       = conj (v x) * (((χ⁻¹ * η) x : Circle) : ℂ) := by
-    rw [map_mul, RCLike.conj_conj]
+    rw [_root_.map_mul, RCLike.conj_conj]
   rw [h2, h1]
   ring
 
@@ -1568,7 +1570,7 @@ theorem exists_integrable_fourierTransform_eq_zero_compl {Ω : Set (PontryaginDu
       filter_upwards [coeFn_modConj μ η b] with x hx
       show (a : G → ℂ) x * (b : G → ℂ) x * conj ((η x : Circle) : ℂ)
         = inner ℂ ((modConj μ η b : G → ℂ) x) ((a : G → ℂ) x)
-      rw [RCLike.inner_apply, hx, map_mul, RCLike.conj_conj]
+      rw [RCLike.inner_apply, hx, _root_.map_mul, RCLike.conj_conj]
       ring
     have h2 : inner ℂ (modConj μ η b) a
         = inner ℂ (plancherelLI μ (modConj μ η b)) (plancherelLI μ a) :=
@@ -1639,3 +1641,5 @@ theorem exists_integrable_fourierTransform_eq_zero_compl {Ω : Set (PontryaginDu
       _ = 0 := integral_zero _ _
 
 end Localized
+
+end MeasureTheory

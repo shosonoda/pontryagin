@@ -49,6 +49,8 @@ set_option linter.unusedSectionVars false
 -- `L1G μ` and `Lp ℂ 1 μ`.
 set_option linter.style.show false
 
+namespace MeasureTheory
+
 variable {G : Type*} [CommGroup G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G] [T2Space G] [MeasurableSpace G] [BorelSpace G]
   (μ : Measure G) [μ.IsHaarMeasure] [μ.Regular]
@@ -202,3 +204,5 @@ theorem exists_norm_npow_rpow_le (F : L1G μ) {C : ℝ} (hC : 0 ≤ C)
   exact h2
 
 end L1G
+
+end MeasureTheory

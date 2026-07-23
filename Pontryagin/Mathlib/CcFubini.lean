@@ -9,6 +9,9 @@ import Mathlib.MeasureTheory.Function.LocallyIntegrable
 /-!
 # Fubini for jointly continuous compactly supported kernels
 
+This file fills a gap in Mathlib (general-purpose material with no project-specific content)
+and is a candidate for upstreaming; see `UPSTREAMING.md` for the audit and target locations.
+
 The measure-theoretic workhorse of the project: for a jointly continuous, compactly supported
 kernel `F : X → Y → E` on topological spaces equipped with Borel-compatible measures that are
 finite on compact sets, the two iterated Bochner integrals agree:
@@ -19,8 +22,8 @@ Crucially, there are **no product-measure, product-σ-algebra, (s/σ-)finiteness
 second-countability hypotheses**: on a general locally compact abelian group (e.g. the
 Pontryagin dual of a compact group, which can fail to be σ-compact), Haar measure is not
 s-finite and the usual Fubini theorems do not apply. The swap itself is
-Mathlib's `MeasureTheory.integral_integral_swap_of_hasCompactSupport`, restated here in curried
-form; this file packages it together with the slice lemmas that make iterated integrals of
+Mathlib's `MeasureTheory.integral_integral_swap_of_hasCompactSupport` (used directly
+downstream); this file provides the slice lemmas that make iterated integrals of
 such kernels usable downstream (convolution of `C_c` functions, approximate identities, the
 symmetric measure identity):
 
@@ -31,7 +34,6 @@ symmetric measure identity):
 
 ## Main statements
 
-* `integral_integral_swap_of_continuous_compactSupport`: the iterated-integral swap.
 * `HasCompactSupport.uncurry_left`, `HasCompactSupport.uncurry_right`: compact support of
   slices.
 * `Continuous.integrable_uncurry_left`, `Continuous.integrable_uncurry_right`: integrability
@@ -57,6 +59,8 @@ case `E = ℝ` (or follows from `E = ℂ` by taking real parts).
 open Function MeasureTheory
 open scoped ENNReal
 
+namespace MeasureTheory
+
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 
 /-! ### Slices of compactly supported kernels -/
@@ -66,7 +70,7 @@ section Slices
 variable {E : Type*} [Zero E] {F : X → Y → E}
 
 /-- The left slices `F x` of a compactly supported kernel `F` are compactly supported. -/
-theorem HasCompactSupport.uncurry_left [R1Space Y] (x : X)
+theorem _root_.HasCompactSupport.uncurry_left [R1Space Y] (x : X)
     (hFsupp : HasCompactSupport (uncurry F)) : HasCompactSupport (F x) :=
   HasCompactSupport.intro (hFsupp.isCompact.image continuous_snd) fun y hy ↦ by
     by_contra h
@@ -75,7 +79,7 @@ theorem HasCompactSupport.uncurry_left [R1Space Y] (x : X)
 
 /-- The right slices `fun x ↦ F x y` of a compactly supported kernel `F` are compactly
 supported. -/
-theorem HasCompactSupport.uncurry_right [R1Space X] (y : Y)
+theorem _root_.HasCompactSupport.uncurry_right [R1Space X] (y : Y)
     (hFsupp : HasCompactSupport (uncurry F)) : HasCompactSupport fun x ↦ F x y :=
   HasCompactSupport.intro (hFsupp.isCompact.image continuous_fst) fun x hx ↦ by
     by_contra h
@@ -84,7 +88,7 @@ theorem HasCompactSupport.uncurry_right [R1Space X] (y : Y)
 
 /-- A compactly supported kernel is supported in a product of two compact sets, namely the
 projections of its topological support. -/
-theorem HasCompactSupport.exists_support_subset_prod
+theorem _root_.HasCompactSupport.exists_support_subset_prod
     (hFsupp : HasCompactSupport (uncurry F)) :
     ∃ K₁ K₂, IsCompact K₁ ∧ IsCompact K₂ ∧ Function.support (uncurry F) ⊆ K₁ ×ˢ K₂ :=
   ⟨_, _, hFsupp.isCompact.image continuous_fst, hFsupp.isCompact.image continuous_snd,
@@ -100,7 +104,7 @@ variable {E : Type*} [NormedAddCommGroup E] {F : X → Y → E}
   {mX : MeasurableSpace X} {mY : MeasurableSpace Y} {μ : Measure X} {ν : Measure Y}
 
 /-- The left slices `F x` of a continuous compactly supported kernel are integrable. -/
-theorem Continuous.integrable_uncurry_left [OpensMeasurableSpace Y] [R1Space Y]
+theorem _root_.Continuous.integrable_uncurry_left [OpensMeasurableSpace Y] [R1Space Y]
     [IsFiniteMeasureOnCompacts ν] (hF : Continuous (uncurry F))
     (hFsupp : HasCompactSupport (uncurry F)) (x : X) :
     Integrable (F x) ν :=
@@ -108,7 +112,7 @@ theorem Continuous.integrable_uncurry_left [OpensMeasurableSpace Y] [R1Space Y]
 
 /-- The right slices `fun x ↦ F x y` of a continuous compactly supported kernel are
 integrable. -/
-theorem Continuous.integrable_uncurry_right [OpensMeasurableSpace X] [R1Space X]
+theorem _root_.Continuous.integrable_uncurry_right [OpensMeasurableSpace X] [R1Space X]
     [IsFiniteMeasureOnCompacts μ] (hF : Continuous (uncurry F))
     (hFsupp : HasCompactSupport (uncurry F)) (y : Y) :
     Integrable (fun x ↦ F x y) μ :=
@@ -213,23 +217,6 @@ theorem norm_integral_integral_le_of_support_subset {K₁ : Set X} {K₂ : Set Y
         norm_setIntegral_le_of_norm_le_const h₁.lt_top fun x _ ↦ hinner x
     _ = C * μ.real K₁ * ν.real K₂ := by ring
 
-/-! ### The iterated-integral swap -/
-
-/-- **Fubini for jointly continuous compactly supported kernels.** For a continuous compactly
-supported kernel `F : X → Y → E` and measures `μ`, `ν` that are finite on compact sets and
-defined on σ-algebras containing the Borel one, the two iterated integrals agree:
-
-`∫ x, ∫ y, F x y ∂ν ∂μ = ∫ y, ∫ x, F x y ∂μ ∂ν`.
-
-There are **no** product-measure, product-σ-algebra, s-finiteness, regularity or
-second-countability hypotheses; in particular this applies to Haar measures on arbitrary
-locally compact Hausdorff groups. This is Mathlib's
-`MeasureTheory.integral_integral_swap_of_hasCompactSupport` in curried form. -/
-theorem integral_integral_swap_of_continuous_compactSupport
-    [OpensMeasurableSpace X] [OpensMeasurableSpace Y]
-    [IsFiniteMeasureOnCompacts μ] [IsFiniteMeasureOnCompacts ν]
-    (hF : Continuous (uncurry F)) (hFsupp : HasCompactSupport (uncurry F)) :
-    ∫ x, ∫ y, F x y ∂ν ∂μ = ∫ y, ∫ x, F x y ∂μ ∂ν :=
-  integral_integral_swap_of_hasCompactSupport hF hFsupp
-
 end Integrals
+
+end MeasureTheory

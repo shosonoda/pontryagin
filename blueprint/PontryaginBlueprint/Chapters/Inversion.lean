@@ -22,7 +22,7 @@ Admissible convolution squares, the dual Haar measure via Riesz–Markov, the
 density identity, and the Fourier inversion formula for positive-type functions.
 :::
 
-:::definition "admissible_square" (parent := "inversion") (lean := "AdmissibleSquare")
+:::definition "admissible_square" (parent := "inversion") (lean := "MeasureTheory.AdmissibleSquare")
 **Admissible squares.** For a compact $`K \subseteq \hat{G}`, an
 `AdmissibleSquare μ K` is a bundle: a convolution square
 $`e = h \star h^*` of a continuous compactly supported function (hence of
@@ -32,7 +32,7 @@ $`\sigma_e` from {uses "bochner"}[], and the lower bound
 $`\widehat{e} \ge 1/4` on $`K`.
 :::
 
-:::theorem "exists_admissible_square" (parent := "inversion") (lean := "exists_admissibleSquare")
+:::theorem "exists_admissible_square" (parent := "inversion") (lean := "MeasureTheory.exists_admissibleSquare")
 For every compact $`K \subseteq \hat{G}` there exists an admissible square
 ({uses "admissible_square"}[]) for $`K`.
 :::
@@ -43,7 +43,7 @@ $`\widehat{h}` uniformly close to $`1` on $`K`, so
 $`\widehat{e} = \lvert \widehat{h} \rvert^2 \ge 1/4` on $`K`.
 :::
 
-:::definition "dual_haar" (parent := "inversion") (lean := "dualHaar")
+:::definition "dual_haar" (parent := "inversion") (lean := "MeasureTheory.dualHaar")
 **The dual Haar measure.** The positive functional
 $`\Lambda(\gamma) = \int_{\hat{G}} \gamma(\chi) / \mathrm{Re}\,\widehat{e}(\chi)\ d\sigma_e(\chi)`
 on $`C_c(\hat{G}, \mathbb{R})` — for any admissible square $`e` for
@@ -53,7 +53,7 @@ measure `dualHaar μ` on $`\hat{G}`. It depends on
 {uses "exists_admissible_square"}[].
 :::
 
-:::theorem "dual_haar_is_haar" (parent := "inversion") (lean := "dualHaar_isHaarMeasure, dualHaar_regular, dualHaar_isMulLeftInvariant")
+:::theorem "dual_haar_is_haar" (parent := "inversion") (lean := "MeasureTheory.dualHaar_isHaarMeasure, MeasureTheory.dualHaar_regular, MeasureTheory.dualHaar_isMulLeftInvariant")
 The measure {uses "dual_haar"}[] is a regular Haar measure on $`\hat{G}`: it is
 regular by construction, translation invariant, nonzero, and positive on open
 sets.
@@ -67,7 +67,7 @@ Nontriviality comes from evaluating the defining functional on a transform of a
 bump; invariance plus nontriviality forces `IsOpenPosMeasure`.
 :::
 
-:::theorem "density_identity" (parent := "inversion") (lean := "integral_cc_mul_fourierTransform_dualHaar")
+:::theorem "density_identity" (parent := "inversion") (lean := "MeasureTheory.integral_cc_mul_fourierTransform_dualHaar")
 **The density identity.** For $`f` continuous, integrable, of positive type with
 Bochner measure $`\sigma_f`, and every $`a \in C_c(\hat{G}, \mathbb{C})`:
 $`\int_{\hat{G}} a\, \widehat{f}\ d(\mathrm{dualHaar}\ \mu) = \int_{\hat{G}} a\ d\sigma_f`.
@@ -103,7 +103,7 @@ $`\widehat{f}` needs a cutoff argument
 neighborhood net is unavailable.
 :::
 
-:::theorem "positive_type_bump" (parent := "inversion") (lean := "exists_positiveType_cc_eq_one")
+:::theorem "positive_type_bump" (parent := "inversion") (lean := "MeasureTheory.exists_positiveType_cc_eq_one")
 **Positive-type bumps.** For every neighborhood $`U` of $`1` in $`G` there is a
 continuous compactly supported function $`f` of positive type with
 $`\operatorname{tsupport} f \subseteq U` and $`f(1) = 1`. These are the test

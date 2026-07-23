@@ -1,13 +1,13 @@
 import Pontryagin.Basic
 import Pontryagin.Bochner
-import Pontryagin.CcFubini
+import Pontryagin.Mathlib.CcFubini
 import Pontryagin.Convolution
-import Pontryagin.Density
-import Pontryagin.DensityLp
+import Pontryagin.Mathlib.Density
+import Pontryagin.Mathlib.DensityLp
 import Pontryagin.DualPolars
 import Pontryagin.Duality
 import Pontryagin.EvalInjective
-import Pontryagin.FiniteMeasureFubini
+import Pontryagin.Mathlib.FiniteMeasureFubini
 import Pontryagin.FourierDense
 import Pontryagin.FourierTransform
 import Pontryagin.Inversion
@@ -15,7 +15,7 @@ import Pontryagin.L1Algebra
 import Pontryagin.Plancherel
 import Pontryagin.PositiveType
 import Pontryagin.Spectrum
-import Pontryagin.StoneWeierstrassC0
-import Pontryagin.Topology
+import Pontryagin.Mathlib.StoneWeierstrassC0
+import Pontryagin.Mathlib.Topology
 import Pontryagin.Translation
 import Pontryagin.UnitizationSpectrum

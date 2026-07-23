@@ -20,7 +20,7 @@ The Parseval identity, the Plancherel isometry $`L^2(G) \cong L^2(\hat{G})`, its
 surjectivity, and localized Fourier transforms.
 :::
 
-:::theorem "cc_close_l1_l2" (parent := "plancherel") (lean := "exists_cc_close_L1_L2")
+:::theorem "cc_close_l1_l2" (parent := "plancherel") (lean := "MeasureTheory.exists_cc_close_L1_L2")
 **Simultaneous approximation.** A function in $`L^1 \cap L^2` can be approximated
 by a single continuous compactly supported function simultaneously in the $`L^1`
 and $`L^2` norms.
@@ -32,7 +32,7 @@ approximant back into the ball of bounded functions — clamping only improves b
 norms. Uses the $`L^p` density machinery of {uses "cc_dense_Lp"}[].
 :::
 
-:::theorem "mconv_mul_consistency" (parent := "plancherel") (lean := "mconv_ae_eq_mulCLM")
+:::theorem "mconv_mul_consistency" (parent := "plancherel") (lean := "MeasureTheory.mconv_ae_eq_mulCLM")
 **Pointwise/abstract consistency.** For $`f, g \in L^1 \cap L^2`, the pointwise
 convolution `mconv μ f g` (everywhere defined by Cauchy–Schwarz) is an
 almost-everywhere representative of the abstract $`L^1`-algebra product
@@ -47,7 +47,7 @@ converges uniformly by the $`L^2 \times L^2` Cauchy–Schwarz bound of
 {uses "mconv_def"}[].
 :::
 
-:::theorem "parseval" (parent := "plancherel") (lean := "integral_norm_sq_fourierTransform")
+:::theorem "parseval" (parent := "plancherel") (lean := "MeasureTheory.integral_norm_sq_fourierTransform")
 **Parseval/Plancherel identity.** For $`f \in L^1 \cap L^2`:
 $`\int_{\hat{G}} \lVert \widehat{f} \rVert^2\ d(\mathrm{dualHaar}\ \mu)
 = \int_G \lVert f \rVert^2\ d\mu`,
@@ -63,7 +63,7 @@ whose value at $`1` is $`\int \lVert v \rVert^2 d\mu`
 $`L^1 \cap L^2` by {uses "cc_close_l1_l2"}[].
 :::
 
-:::definition "plancherel_isometry" (parent := "plancherel") (lean := "plancherelLI")
+:::definition "plancherel_isometry" (parent := "plancherel") (lean := "MeasureTheory.plancherelLI")
 **The Plancherel isometry.** `plancherelLI μ : Lp ℂ 2 μ →ₗᵢ[ℂ] Lp ℂ 2 (dualHaar μ)`
 is the unique isometric extension of
 $`v \mapsto \text{class of } \widehat{v}` from the dense subspace of $`C_c`
@@ -71,7 +71,7 @@ classes ({uses "cc_dense_Lp"}[]) — an isometry by {uses "parseval"}[]. It agre
 with the pointwise transform on all of $`L^1 \cap L^2`.
 :::
 
-:::theorem "dual_uniqueness" (parent := "plancherel") (lean := "ae_eq_zero_of_forall_integral_char_mul_eq_zero")
+:::theorem "dual_uniqueness" (parent := "plancherel") (lean := "MeasureTheory.ae_eq_zero_of_forall_integral_char_mul_eq_zero")
 **Dual uniqueness (density form).** If $`w` is integrable on $`\hat{G}` against
 the dual Haar measure and all its "inverse Fourier coefficients" vanish —
 $`\int_{\hat{G}} \chi(x)\, w(\chi)\ d(\mathrm{dualHaar}\ \mu)(\chi) = 0` for
@@ -87,7 +87,7 @@ every compact, and the lower bound $`\widehat{e} \ge 1/4` lets $`e` be divided
 out. Testing against $`C_c` uses {uses "l1_testing"}[].
 :::
 
-:::theorem "plancherel_surjective" (parent := "plancherel") (lean := "surjective_plancherelLI")
+:::theorem "plancherel_surjective" (parent := "plancherel") (lean := "MeasureTheory.surjective_plancherelLI")
 **Surjectivity of Plancherel.** The isometry {uses "plancherel_isometry"}[] is
 surjective: the Fourier transform is a unitary equivalence
 $`L^2(G) \cong L^2(\hat{G})`.
@@ -101,7 +101,7 @@ against transforms of $`C_c` functions unwinds, via
 {uses "dual_uniqueness"}[] — hence vanishes.
 :::
 
-:::theorem "localized_transform" (parent := "plancherel") (lean := "exists_integrable_fourierTransform_eq_zero_compl")
+:::theorem "localized_transform" (parent := "plancherel") (lean := "MeasureTheory.exists_integrable_fourierTransform_eq_zero_compl")
 **Localized transforms.** For every nonempty open $`\Omega \subseteq \hat{G}`
 there is an integrable $`\Phi \colon G \to \mathbb{C}` whose Fourier transform is
 not identically zero but vanishes outside $`\Omega`.

@@ -697,7 +697,7 @@ theorem IsPositiveType.integral_mconv_mstar_mul_nonneg {φ : G → ℂ} (hφ : I
       ≤ ∫ x, ∫ y, conj (f y) * f x * φ (y⁻¹ * x) ∂μ ∂μ :=
         hφ.integral_mconv_nonneg μ hφc hf hf'
     _ = ∫ y, ∫ x, conj (f y) * f x * φ (y⁻¹ * x) ∂μ ∂μ :=
-        (integral_integral_swap_of_continuous_compactSupport hk₃c hk₃supp).symm
+        (integral_integral_swap_of_hasCompactSupport hk₃c hk₃supp).symm
     _ = ∫ y, ∫ x, conj (f y) * f (y * x) * φ (y⁻¹ * (y * x)) ∂μ ∂μ := by
         refine integral_congr_ae (Eventually.of_forall fun y => ?_)
         exact (integral_mul_left_eq_self (fun x => conj (f y) * f x * φ (y⁻¹ * x)) y).symm
@@ -709,7 +709,7 @@ theorem IsPositiveType.integral_mconv_mstar_mul_nonneg {φ : G → ℂ} (hφ : I
     _ = ∫ y, ∫ x, mstar f y * f (y⁻¹ * x) * φ x ∂μ ∂μ :=
         integral_inv_eq_self (fun y => ∫ x, mstar f y * f (y⁻¹ * x) * φ x ∂μ) μ
     _ = ∫ x, ∫ y, mstar f y * f (y⁻¹ * x) * φ x ∂μ ∂μ :=
-        (integral_integral_swap_of_continuous_compactSupport hk₂c hk₂supp).symm
+        (integral_integral_swap_of_hasCompactSupport hk₂c hk₂supp).symm
     _ = ∫ x, mconv μ (mstar f) f x * φ x ∂μ := by
         refine integral_congr_ae (Eventually.of_forall fun x => ?_)
         exact integral_mul_const (φ x) _

@@ -1,12 +1,12 @@
 import Verso
 import VersoManual
 import VersoBlueprint
-import Pontryagin.CcFubini
-import Pontryagin.FiniteMeasureFubini
-import Pontryagin.Density
-import Pontryagin.DensityLp
-import Pontryagin.StoneWeierstrassC0
-import Pontryagin.Topology
+import Pontryagin.Mathlib.CcFubini
+import Pontryagin.Mathlib.FiniteMeasureFubini
+import Pontryagin.Mathlib.Density
+import Pontryagin.Mathlib.DensityLp
+import Pontryagin.Mathlib.StoneWeierstrassC0
+import Pontryagin.Mathlib.Topology
 import Pontryagin.Translation
 import Pontryagin.DualPolars
 
@@ -38,7 +38,7 @@ kernels, density of $`C_c` in $`L^p`, Stone–Weierstrass for $`C_0`, normalized
 bumps, translation operators, and the polar description of the dual topology.
 :::
 
-:::theorem "cc_fubini" (parent := "foundations") (lean := "integral_integral_swap_of_continuous_compactSupport")
+:::theorem "cc_fubini" (parent := "foundations") (lean := "MeasureTheory.integral_integral_swap_of_hasCompactSupport")
 **Fubini for jointly continuous compactly supported kernels.** For a jointly
 continuous, compactly supported kernel $`F \colon X \times Y \to E` on topological
 spaces carrying Borel-compatible measures that are finite on compacts, the two
@@ -56,7 +56,7 @@ lemmas (continuity, compact support, and integrability of the partial integrals)
 that make iterated integrals of such kernels usable downstream.
 :::
 
-:::theorem "finite_measure_fubini" (parent := "foundations") (lean := "integral_integral_swap_of_finite_of_compactSupport")
+:::theorem "finite_measure_fubini" (parent := "foundations") (lean := "MeasureTheory.integral_integral_swap_of_finite_of_compactSupport")
 **Fubini against a finite measure.** The swap of {uses "cc_fubini"}[] extends to
 bounded jointly continuous kernels compactly supported in only *one* variable,
 integrated in the other variable against a finite inner regular measure
@@ -74,7 +74,7 @@ dominated convergence.
 
 # Density of test functions
 
-:::theorem "cc_dense_L1" (parent := "foundations") (lean := "exists_hasCompactSupport_integral_norm_sub_le")
+:::theorem "cc_dense_L1" (parent := "foundations") (lean := "MeasureTheory.exists_hasCompactSupport_integral_norm_sub_le")
 **$`C_c` is dense in $`L^1`.** On a locally compact Hausdorff space with a regular
 Borel measure, every integrable function is within $`\varepsilon` (in the $`L^1`
 norm) of a continuous compactly supported function. Mathlib's version assumes
@@ -88,7 +88,7 @@ approximate those using regularity of the measure and the locally compact form o
 Urysohn's lemma (`exists_continuous_one_zero_of_isCompact`).
 :::
 
-:::theorem "l1_testing" (parent := "foundations") (lean := "ae_eq_zero_of_forall_integral_mul_eq_zero")
+:::theorem "l1_testing" (parent := "foundations") (lean := "MeasureTheory.ae_eq_zero_of_forall_integral_mul_eq_zero")
 **$`L^1` functions are determined by testing against $`C_c`.** If $`u` is
 integrable and $`\int u\,\varphi\,d\mu = 0` for every continuous compactly
 supported test function $`\varphi`, then $`u = 0` almost everywhere.
@@ -101,7 +101,7 @@ $`\varphi := \overline{v} / \max(\lVert v \rVert, \delta)` and let
 $`\delta \to 0`. No $`L^1`–$`L^\infty` duality is used.
 :::
 
-:::theorem "cc_dense_Lp" (parent := "foundations") (lean := "dense_ccLp, dense_ccL2")
+:::theorem "cc_dense_Lp" (parent := "foundations") (lean := "MeasureTheory.dense_ccLp, MeasureTheory.dense_ccL2")
 **$`C_c` is dense in $`L^p`** for every exponent $`p \neq \infty`: the set of
 classes in $`L^p(\mu)` admitting a continuous compactly supported representative
 is dense. The case $`p = 2` is what the Plancherel layer consumes.
@@ -146,7 +146,7 @@ closure; an open subgroup of a topological group is closed, so the subgroup equa
 its closure.
 :::
 
-:::theorem "normalized_bump" (parent := "foundations") (lean := "exists_normalized_bump")
+:::theorem "normalized_bump" (parent := "foundations") (lean := "MeasureTheory.exists_normalized_bump")
 **Normalized bumps.** For every neighborhood $`U` of $`1` in $`G` there is a
 nonnegative continuous compactly supported real function $`h` with
 $`\operatorname{tsupport} h \subseteq U` and $`\int h \, d\mu = 1`. These bumps
@@ -159,7 +159,7 @@ $`U` and normalize; the integral is positive because Haar measure is positive on
 open sets.
 :::
 
-:::definition "translate_lp" (parent := "foundations") (lean := "translateLp, mtranslate")
+:::definition "translate_lp" (parent := "foundations") (lean := "MeasureTheory.translateLp, MeasureTheory.mtranslate")
 **Translation operators.** Left translation
 $`(\tau_a f)(x) = f(a^{-1} x)` acts on functions (`mtranslate`) and descends to a
 linear isometry $`\tau_a \colon L^p(\mu) \to L^p(\mu)` (`translateLp`) for each
@@ -167,7 +167,7 @@ $`a \in G`, satisfying $`\tau_1 = \mathrm{id}` and
 $`\tau_a \circ \tau_b = \tau_{ab}`.
 :::
 
-:::theorem "continuous_translate" (parent := "foundations") (lean := "continuous_translateLp")
+:::theorem "continuous_translate" (parent := "foundations") (lean := "MeasureTheory.continuous_translateLp")
 For $`p \neq \infty` and fixed $`f \in L^p(\mu)`, the map
 $`a \mapsto \tau_a f` is continuous from $`G` to $`L^p(\mu)`; that is,
 {uses "translate_lp"}[] is a strongly continuous isometric action.

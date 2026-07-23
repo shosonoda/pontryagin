@@ -11,6 +11,9 @@ import Mathlib.Topology.Compactification.OnePoint.Basic
 /-!
 # The Stone–Weierstrass theorem for functions vanishing at infinity
 
+This file fills a gap in Mathlib (general-purpose material with no project-specific content)
+and is a candidate for upstreaming; see `UPSTREAMING.md` for the audit and target locations.
+
 Let `X` be a locally compact Hausdorff space and `𝕜` be either `ℝ` or `ℂ`.  This file proves the
 non-unital version of the Stone–Weierstrass theorem: a non-unital star subalgebra `A` of
 `C₀(X, 𝕜)`, the continuous functions on `X` vanishing at infinity, is dense provided that it

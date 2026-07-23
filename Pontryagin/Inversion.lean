@@ -57,7 +57,7 @@ of bounded continuous densities against finite positive (Bochner) measures.
 
 noncomputable section
 
-open Filter Function MeasureTheory Set Topology
+open Filter Function MeasureTheory Set Topology PontryaginDual
 open scoped ComplexConjugate ComplexOrder ENNReal NNReal ZeroAtInfty CompactlySupported
   Pointwise
 
@@ -68,23 +68,18 @@ set_option linter.unusedSectionVars false
 -- `show` is used pervasively to beta-reduce integrands and to unfold definitional equalities.
 set_option linter.style.show false
 
+namespace MeasureTheory
+
 /-! ### Quotients by a function without zeros on the support of the numerator -/
 
 section QuotientContinuity
 
 variable {X : Type*} [TopologicalSpace X] {𝕜 : Type*} [NormedField 𝕜]
 
-/-- The support of a pointwise quotient is contained in the support of the numerator. -/
-theorem support_div_subset (γ u : X → 𝕜) :
-    (support fun x => γ x / u x) ⊆ support γ := fun x hx => by
-  simp only [mem_support] at hx ⊢
-  intro h0
-  exact hx (by rw [h0, zero_div])
-
 /-- If `u` has no zeros on `tsupport γ`, the (junk-value) quotient `γ / u` is continuous:
 away from `tsupport γ` it vanishes identically, and on a neighborhood of `tsupport γ` the
 denominator does not vanish. -/
-theorem Continuous.div_of_tsupport_ne_zero {γ u : X → 𝕜} (hγ : Continuous γ)
+theorem _root_.Continuous.div_of_tsupport_ne_zero {γ u : X → 𝕜} (hγ : Continuous γ)
     (hu : Continuous u) (h : ∀ x ∈ tsupport γ, u x ≠ 0) :
     Continuous fun x => γ x / u x := by
   rw [continuous_iff_continuousAt]
@@ -109,7 +104,7 @@ variable {X : Type*} [TopologicalSpace X] [T2Space X] [LocallyCompactSpace X]
 /-- **One-sided testing lemma**: on a locally compact Hausdorff space with an open-positive
 measure that is finite on compacts, a continuous real function whose integral against every
 nonnegative `C_c` test function is nonnegative is itself nonnegative. -/
-theorem Continuous.nonneg_of_forall_integral_cc_nonneg {u : X → ℝ} (hu : Continuous u)
+theorem _root_.Continuous.nonneg_of_forall_integral_cc_nonneg {u : X → ℝ} (hu : Continuous u)
     (ν : Measure X) [ν.IsOpenPosMeasure] [IsFiniteMeasureOnCompacts ν]
     (h : ∀ g : X → ℝ, Continuous g → HasCompactSupport g → (∀ x, 0 ≤ g x) →
       0 ≤ ∫ x, g x * u x ∂ν) :
@@ -161,30 +156,32 @@ section CharHelpers
 
 variable {G : Type*} [CommGroup G] [TopologicalSpace G]
 
-theorem continuous_char_apply (x : G) :
+theorem _root_.PontryaginDual.continuous_char_apply (x : G) :
     Continuous fun χ : PontryaginDual G => ((χ x : Circle) : ℂ) := by
   refine continuous_subtype_val.comp ?_
   change Continuous fun χ : G →ₜ* Circle => χ x
   exact continuous_eval_const x
 
 /-- Conjugating a character value inverts the argument. -/
-theorem conj_char_apply (χ : PontryaginDual G) (y : G) :
+theorem _root_.PontryaginDual.conj_char_apply (χ : PontryaginDual G) (y : G) :
     conj ((χ y : Circle) : ℂ) = ((χ y⁻¹ : Circle) : ℂ) := by
   rw [map_inv, Circle.coe_inv_eq_conj]
 
 /-- The multiplicativity of characters, in the form used by the Fubini computations. -/
-theorem char_mul_conj_char (χ : PontryaginDual G) (x y : G) :
+theorem _root_.PontryaginDual.char_mul_conj_char (χ : PontryaginDual G) (x y : G) :
     ((χ x : Circle) : ℂ) * conj ((χ y : Circle) : ℂ) = ((χ (y⁻¹ * x) : Circle) : ℂ) := by
-  rw [conj_char_apply, ← Circle.coe_mul, ← map_mul, mul_comm x y⁻¹]
+  rw [conj_char_apply, ← Circle.coe_mul, ← _root_.map_mul, mul_comm x y⁻¹]
 
 variable {mΓ : MeasurableSpace (PontryaginDual G)} [OpensMeasurableSpace (PontryaginDual G)]
 
-theorem integrable_char (σ : Measure (PontryaginDual G)) [IsFiniteMeasure σ] (x : G) :
+theorem _root_.PontryaginDual.integrable_char (σ : Measure (PontryaginDual G))
+    [IsFiniteMeasure σ] (x : G) :
     Integrable (fun χ : PontryaginDual G => ((χ x : Circle) : ℂ)) σ :=
   (integrable_const (1 : ℝ)).mono' (continuous_char_apply x).aestronglyMeasurable
     (Eventually.of_forall fun χ => by simp)
 
-theorem norm_integral_char_le (σ : Measure (PontryaginDual G)) [IsFiniteMeasure σ] (x : G) :
+theorem _root_.PontryaginDual.norm_integral_char_le (σ : Measure (PontryaginDual G))
+    [IsFiniteMeasure σ] (x : G) :
     ‖∫ χ : PontryaginDual G, ((χ x : Circle) : ℂ) ∂σ‖ ≤ σ.real Set.univ := by
   calc ‖∫ χ : PontryaginDual G, ((χ x : Circle) : ℂ) ∂σ‖
       ≤ ∫ _χ : PontryaginDual G, (1 : ℝ) ∂σ :=
@@ -485,7 +482,7 @@ variable {mΓ : MeasurableSpace (PontryaginDual G)} [BorelSpace (PontryaginDual 
 
 /-- The Fourier transform of a convolution square is the (real, nonnegative) squared modulus
 of the transform: `𝓕(g ⋆ g^*) = ‖𝓕g‖²`. -/
-theorem fourierTransform_mconv_mstar {g : G → ℂ} (hgc : Continuous g)
+theorem _root_.PontryaginDual.fourierTransform_mconv_mstar {g : G → ℂ} (hgc : Continuous g)
     (hgs : HasCompactSupport g) (χ : PontryaginDual G) :
     fourierTransform μ (mconv μ g (mstar g)) χ
       = ((‖fourierTransform μ g χ‖ ^ 2 : ℝ) : ℂ) := by
@@ -713,7 +710,7 @@ theorem integrable_div_re (E : AdmissibleSquare μ K) {γ : PontryaginDual G →
     Integrable (fun χ => γ χ / (fourierTransform μ E.e χ).re) (E.σ) := by
   haveI := E.finite
   exact (E.continuous_div_re μ hγc hγK).integrable_of_hasCompactSupport
-    (hγs.mono (support_div_subset _ _))
+    (hγs.mono (by rw [support_div]; exact Set.inter_subset_left))
 
 /-- **Well-definedness of the dual Haar pairing**: two admissible squares assign the same
 pairing to any `C_c` function supported in both of their compact sets.  This is the heart of
@@ -746,7 +743,7 @@ theorem pairing_congr (E : AdmissibleSquare μ K) (E' : AdmissibleSquare μ K')
   have hbc : Continuous fun χ => γC χ / (u χ * u' χ) :=
     hγCc.div_of_tsupport_ne_zero (huc.mul hu'c) hden
   have hbs : HasCompactSupport fun χ => γC χ / (u χ * u' χ) :=
-    hγCs.mono (support_div_subset _ _)
+    hγCs.mono (by rw [support_div]; exact Set.inter_subset_left)
   set B : C₀(PontryaginDual G, ℂ) :=
     ⟨⟨fun χ => γC χ / (u χ * u' χ), hbc⟩, hbs.is_zero_at_infty⟩ with hBdef
   -- the symmetric identity for `B`
@@ -803,20 +800,20 @@ section DualHaar
 variable [mΓ : MeasurableSpace (PontryaginDual G)] [BorelSpace (PontryaginDual G)]
 
 /-- A choice of admissible square for the support of a compactly supported function. -/
-noncomputable def dualSquare (γ : C_c(PontryaginDual G, ℝ)) :
+private noncomputable def dualSquare (γ : C_c(PontryaginDual G, ℝ)) :
     AdmissibleSquare μ (tsupport ⇑γ) :=
   (exists_admissibleSquare μ γ.hasCompactSupport).some
 
 /-- The evaluation of the dual Haar functional against the chosen square only depends on
 the function, not on the (admissible) square used to compute it. -/
-theorem dualSquare_pairing_eq {K : Set (PontryaginDual G)} (E : AdmissibleSquare μ K)
+private theorem dualSquare_pairing_eq {K : Set (PontryaginDual G)} (E : AdmissibleSquare μ K)
     (γ : C_c(PontryaginDual G, ℝ)) (hγK : tsupport ⇑γ ⊆ K) :
     (dualSquare μ γ).pairing μ ⇑γ = E.pairing μ ⇑γ :=
   (dualSquare μ γ).pairing_congr μ E (map_continuous γ) γ.hasCompactSupport subset_rfl hγK
 
 /-- **The dual Haar functional** `Λ γ = ∫ χ, γ(χ) / (𝓕e χ).re ∂σₑ`, as a positive linear
 functional on `C_c(Ĝ, ℝ)`, where `e` is any admissible square for `tsupport γ`. -/
-def dualLambda : C_c(PontryaginDual G, ℝ) →ₚ[ℝ] ℝ where
+private def dualLambda : C_c(PontryaginDual G, ℝ) →ₚ[ℝ] ℝ where
   toFun := fun γ => (dualSquare μ γ).pairing μ ⇑γ
   map_add' := fun γ δ => by
     have hK : IsCompact (tsupport ⇑γ ∪ tsupport ⇑δ) :=
@@ -874,7 +871,7 @@ def dualLambda : C_c(PontryaginDual G, ℝ) →ₚ[ℝ] ℝ where
     exact mul_le_mul_of_nonneg_right (hγδ χ) (inv_nonneg.mpr (E.transform_nonneg χ))
 
 @[simp]
-theorem dualLambda_apply (γ : C_c(PontryaginDual G, ℝ)) :
+private theorem dualLambda_apply (γ : C_c(PontryaginDual G, ℝ)) :
     dualLambda μ γ = (dualSquare μ γ).pairing μ ⇑γ := rfl
 
 /-- **The dual Haar measure** on the Pontryagin dual, as the Riesz–Markov–Kakutani measure
@@ -886,7 +883,7 @@ instance dualHaar_regular : (dualHaar μ).Regular :=
   RealRMK.regular_rieszMeasure _
 
 /-- The dual Haar measure represents the dual Haar functional. -/
-theorem integral_cc_dualHaar (γ : C_c(PontryaginDual G, ℝ)) :
+private theorem integral_cc_dualHaar (γ : C_c(PontryaginDual G, ℝ)) :
     ∫ χ, γ χ ∂(dualHaar μ) = dualLambda μ γ :=
   RealRMK.integral_rieszMeasure _ γ
 
@@ -931,7 +928,8 @@ theorem AdmissibleSquare.integral_dualHaar_eq_div {K : Set (PontryaginDual G)}
   -- integrability on both sides
   have hwint : Integrable w (dualHaar μ) := hwc.integrable_of_hasCompactSupport hws
   have hdivc : Continuous fun χ => w χ / u χ := hwc.div_of_tsupport_ne_zero huc hune
-  have hdivs : HasCompactSupport fun χ => w χ / u χ := hws.mono (support_div_subset _ _)
+  have hdivs : HasCompactSupport fun χ => w χ / u χ :=
+    hws.mono (by rw [support_div]; exact Set.inter_subset_left)
   have hdivint : Integrable (fun χ => w χ / u χ) E.σ :=
     hdivc.integrable_of_hasCompactSupport hdivs
   -- the pointwise real/imaginary parts of the quotient
@@ -1057,7 +1055,7 @@ theorem integral_cc_mul_fourierTransform_dualHaar
   have hbc : Continuous fun χ => a χ / fourierTransform μ E.e χ :=
     hac.div_of_tsupport_ne_zero huc hune
   have hbs : HasCompactSupport fun χ => a χ / fourierTransform μ E.e χ :=
-    has.mono (support_div_subset _ _)
+    has.mono (by rw [support_div]; exact Set.inter_subset_left)
   set B : C₀(PontryaginDual G, ℂ) :=
     ⟨⟨fun χ => a χ / fourierTransform μ E.e χ, hbc⟩, hbs.is_zero_at_infty⟩ with hBdef
   -- Step 1: complex evaluation of the `C_c` function `a ⬝ 𝓕f` against `dualHaar μ`
@@ -1153,11 +1151,11 @@ section TransformReal
 variable [mΓ : MeasurableSpace (PontryaginDual G)] [BorelSpace (PontryaginDual G)]
 
 /-- A function of positive type is invariant under the star involution. -/
-theorem IsPositiveType.mstar_eq {f : G → ℂ} (hf : IsPositiveType f) : mstar f = f :=
+theorem _root_.IsPositiveType.mstar_eq {f : G → ℂ} (hf : IsPositiveType f) : mstar f = f :=
   funext fun x => by rw [mstar_apply, hf.apply_inv x, Complex.conj_conj]
 
 /-- The Fourier transform of a function of positive type is real. -/
-theorem IsPositiveType.fourierTransform_im {f : G → ℂ} (hf : IsPositiveType f)
+theorem _root_.IsPositiveType.fourierTransform_im {f : G → ℂ} (hf : IsPositiveType f)
     (χ : PontryaginDual G) : (fourierTransform μ f χ).im = 0 := by
   have h := fourierTransform_mstar μ f χ
   rw [hf.mstar_eq] at h
@@ -1195,7 +1193,7 @@ theorem integral_cc_mul_re_fourierTransform_dualHaar (hfi : Integrable f μ)
 
 /-- **Nonnegativity of the transform**: the Fourier transform of a function with a Bochner
 representation is (real and) nonnegative. -/
-theorem fourierTransform_re_nonneg (hfi : Integrable f μ)
+theorem _root_.PontryaginDual.fourierTransform_re_nonneg (hfi : Integrable f μ)
     (hrep : ∀ x : G, f x = ∫ χ, (χ x : ℂ) ∂σf) (χ : PontryaginDual G) :
     0 ≤ (fourierTransform μ f χ).re := by
   have hFc : Continuous fun χ => (fourierTransform μ f χ).re :=
@@ -1206,7 +1204,7 @@ theorem fourierTransform_re_nonneg (hfi : Integrable f μ)
 
 /-- The Fourier transform of a function with a Bochner representation coincides with the
 coercion of its real part. -/
-theorem fourierTransform_eq_ofReal_re
+theorem _root_.PontryaginDual.fourierTransform_eq_ofReal_re
     (hrep : ∀ x : G, f x = ∫ χ, (χ x : ℂ) ∂σf) (χ : PontryaginDual G) :
     fourierTransform μ f χ = (((fourierTransform μ f χ).re : ℝ) : ℂ) := by
   have hpt : IsPositiveType f := by
@@ -1683,7 +1681,7 @@ variable [mΓ : MeasurableSpace (PontryaginDual G)] [BorelSpace (PontryaginDual 
 of positive type on a locally compact Hausdorff abelian group,
 
 `f x = ∫ χ, χ(x) ⬝ 𝓕f(χ) ∂(dualHaar μ)`. -/
-theorem IsPositiveType.fourier_inversion {f : G → ℂ} (hf : IsPositiveType f)
+theorem _root_.IsPositiveType.fourier_inversion {f : G → ℂ} (hf : IsPositiveType f)
     (hfc : Continuous f) (hfi : Integrable f μ) (x : G) :
     f x = ∫ χ, (χ x : ℂ) * fourierTransform μ f χ ∂(dualHaar μ) := by
   obtain ⟨σf, hfin, hreg, hrep⟩ := hf.exists_bochner_measure μ hfc
@@ -1696,13 +1694,13 @@ theorem IsPositiveType.fourier_inversion {f : G → ℂ} (hf : IsPositiveType f)
   exact hrep x
 
 /-- Fourier inversion at the identity: `f 1 = ∫ χ, 𝓕f(χ) ∂(dualHaar μ)`. -/
-theorem IsPositiveType.fourier_inversion_one {f : G → ℂ} (hf : IsPositiveType f)
+theorem _root_.IsPositiveType.fourier_inversion_one {f : G → ℂ} (hf : IsPositiveType f)
     (hfc : Continuous f) (hfi : Integrable f μ) :
     f 1 = ∫ χ, fourierTransform μ f χ ∂(dualHaar μ) := by
   rw [hf.fourier_inversion μ hfc hfi 1]
   refine integral_congr_ae (Eventually.of_forall fun χ => ?_)
   show ((χ (1 : G) : Circle) : ℂ) * fourierTransform μ f χ = fourierTransform μ f χ
-  rw [map_one, Circle.coe_one, one_mul]
+  rw [_root_.map_one, Circle.coe_one, one_mul]
 
 end Inversion
 
@@ -1777,3 +1775,5 @@ theorem exists_positiveType_cc_eq_one (U : Set G) (hU : U ∈ nhds (1 : G)) :
       Complex.ofReal_one]
 
 end Exports
+
+end MeasureTheory

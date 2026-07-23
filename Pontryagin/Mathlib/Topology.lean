@@ -10,6 +10,9 @@ import Mathlib.Topology.Compactness.LocallyCompact
 /-!
 # Locally compact subspaces and subgroups
 
+This file fills a gap in Mathlib (general-purpose material with no project-specific content)
+and is a candidate for upstreaming; see `UPSTREAMING.md` for the audit and target locations.
+
 Two generic facts used in the proof of Pontryagin duality:
 
 * `IsLocallyClosed.of_locallyCompactSpace`: a locally compact subspace of a Hausdorff space

@@ -79,7 +79,7 @@ The two biggest systematic review battles to expect:
 
 ## Module-by-module findings
 
-### Pontryagin/Topology.lean (116 lines)
+### Pontryagin/Mathlib/Topology.lean (116 lines)
 
 Two general facts, both genuine gap-fillers: Mathlib has only the *converse*
 (`IsLocallyClosed.locallyCompactSpace`, `Mathlib/Topology/Compactness/LocallyCompact.lean:216`),
@@ -93,7 +93,7 @@ discrete ⇒ locally compact) and `Subgroup.isClosed_of_isOpen`
 | `IsLocallyClosed.of_locallyCompactSpace` | upstream as-is | `Mathlib/Topology/Compactness/LocallyCompact.lean` | Name matches the `X.of_locallyCompactSpace` precedent. Add companion `IsEmbedding.isLocallyClosed_range` (absent). High value. |
 | `Subgroup.isClosed_of_locallyCompactSpace` | upstream after changes | `Mathlib/Topology/Algebra/Group/Compact.lean` | Add `@[to_additive]`. Factor the second half as standalone `Subgroup.isClosed_of_isLocallyClosed` via `IsLocallyClosed.isOpen_preimage_val_closure` (`LocallyClosed.lean:194`) + `isClosed_of_isOpen` — replaces ~55 lines of translate-cover argument with ~10. High value. |
 
-### Pontryagin/CcFubini.lean (235 lines)
+### Pontryagin/Mathlib/CcFubini.lean (235 lines)
 
 The headline swap is a **pure re-export**: Mathlib's
 `MeasureTheory.integral_integral_swap_of_hasCompactSupport`
@@ -112,7 +112,7 @@ inline, evidence they are worth having.
 | `hasCompactSupport_integral_right` / `_left`, `integrable_integral_right` / `_left` | upstream as-is | `LocallyIntegrable.lean` / `Bochner/Set.lean` | The reusable API that Haar-uniqueness proofs currently re-derive ad hoc. |
 | `norm_integral_integral_le_of_support_subset` | upstream after changes | `Integral/Prod.lean` | Weaken the bound hypothesis to the support. Low-medium value. |
 
-### Pontryagin/FiniteMeasureFubini.lean (225 lines)
+### Pontryagin/Mathlib/FiniteMeasureFubini.lean (225 lines)
 
 Genuinely new: Mathlib has exactly two `integral_integral_swap*` lemmas (product-
 integrable + SFinite at `Prod.lean:481`; joint compact support at `Prod.lean:602`);
@@ -125,7 +125,7 @@ spaces.
 | `continuous_integral_right_of_forall_compl_eq_zero` / `_left_…` | upstream after changes | `Mathlib/MeasureTheory/Integral/Bochner/Set.lean` | Rename `continuous_integral_of_compact_support`; keep one variant (other = `Prod.swap`). Fills a gap: the existing `continuous_parametric_integral_of_continuous` (line 1129) demands first-countability + second-countability that this avoids. |
 | `integral_integral_swap_of_finite_of_compactSupport` | upstream after changes | `Mathlib/MeasureTheory/Integral/Regular.lean` (or a new small file) | Rename e.g. `integral_integral_swap_of_isFiniteMeasure_of_compactSupport`; state with `[RegularSpace X]` instead of T2 (free generalization — Urysohn needs only regular + LC); docstring should advertise the no-product-σ-algebra selling point. A reviewer may ask to factor the compact-exhaustion + cutoff-sequence steps into a reusable `InnerRegularCompactLTTop` lemma. High value for LCA work. |
 
-### Pontryagin/Density.lean (284 lines) and Pontryagin/DensityLp.lean (173 lines)
+### Pontryagin/Mathlib/Density.lean (284 lines) and Pontryagin/Mathlib/DensityLp.lean (173 lines)
 
 Two halves. (a) **C_c density in Lp without `NormalSpace`**: Mathlib's
 `ContinuousMapDense.lean` carries `variable [NormalSpace α]` (line 66), and Mathlib
@@ -156,7 +156,7 @@ results are the smooth-test-function lemmas in
 | `dense_ccLp` | upstream after changes | same | Reshape as `CompactlySupportedContinuousMap.toLp` + `toLp_denseRange`, mirroring `BoundedContinuousFunction.toLp_denseRange` (line 349). The set-of-classes formulation will not pass review. |
 | `dense_ccL2` | skip | — | Trivial `p = 2` instantiation. |
 
-### Pontryagin/StoneWeierstrassC0.lean (217 lines)
+### Pontryagin/Mathlib/StoneWeierstrassC0.lean (217 lines)
 
 Fills an explicitly acknowledged Mathlib gap:
 `Mathlib/Topology/ContinuousMap/StoneWeierstrass.lean:45-48` — *"Future work — Extend
@@ -236,7 +236,7 @@ de-duplicating refactor.
 |---|---|---|---|
 | `Circle.closure_centeredArc`, `mem_closure_centeredArc` | upstream as-is | `Analysis/SpecialFunctions/Complex/Circle.lean` | Fits the existing `centeredArc` API; nothing there computes closures. |
 | `Circle.abs_arg_le_div_of_pow_mem_centeredArc` | upstream after changes | same | Quantitative no-small-subgroups; generalize `π/4` to any `r ≤ π/2`. |
-| `Circle.norm_coe_sub_one_le_abs_arg` | possibly redundant | optional one-liner | Two lines from `Complex.norm_exp_I_mul_ofReal_sub_one_le` (`Trigonometric/Bounds.lean:260`) + `Circle.exp_arg`; don't upstream the `nlinarith` proof. |
+| `Circle.norm_coe_sub_one_le_abs_arg` | possibly redundant | optional one-liner | Two lines from `Real.norm_exp_I_mul_ofReal_sub_one_le` (`Trigonometric/Bounds.lean:260`) + `Circle.exp_arg`; don't upstream the `nlinarith` proof. |
 | `ContinuousEvalConst` instance for the dual | upstream as-is | `PontryaginDual.lean` | Genuinely missing from the `deriving` list (line 66). |
 | `PontryaginDual.polar` + `mem_polar`/`one_mem_polar`/`polar_anti`/`isClosed_polar` | upstream after changes | `PontryaginDual.lean` | Reshape via `Set.MapsTo`; parametrize the arc; document naming vs `NormedSpace.polar`. |
 | `isCompact_polar` | **upstream after changes — high value** | refactor of `Group/CompactOpen.lean` + corollary | Extract a general `ContinuousMonoidHom.isCompact_setOf_mapsTo` (equicontinuous into a closed compact target ⇒ compact), re-derive Mathlib's LCS instance from it; the polar result becomes a short corollary, and needs **no local compactness of G**. |
@@ -284,7 +284,7 @@ Multiplicative-only is acceptable — `PontryaginDual` has no additive twin, so
 
 | declaration | verdict | target | notes |
 |---|---|---|---|
-| `Circle.sqrt_two_div_two_le_norm_coe_sub_one` | upstream after changes | `Circle.lean` (or private in the RL file) | Derive from `Complex.norm_exp_I_mul_ofReal_sub_one` (`Analysis/Complex/Trigonometric.lean:973`). |
+| `Circle.sqrt_two_div_two_le_norm_coe_sub_one` | upstream after changes | `Circle.lean` (or private in the RL file) | Derive from `Real.norm_exp_I_mul_ofReal_sub_one` (`Analysis/Complex/Trigonometric.lean:973`). |
 | `PontryaginDual.norm_coe_sub_coe` | upstream as-is | `PontryaginDual.lean` | Small but repeatedly used. |
 | `fourierTransform` + `_apply` | upstream after changes | new `Mathlib/Analysis/Fourier/LCA/FourierTransform.lean` | Namespace + `fourierIntegral`-style name; Banach codomain via `(χ x)⁻¹ • f x`; definition needs no Haar. Top priority. |
 | `_congr_ae`, `_smul`, `norm_…_le`, `_add`, `_sub`, `norm_…_sub_le` | upstream as-is (renames) | same | Keep names parallel to `VectorFourier.*`; minimize hypotheses per lemma. |
@@ -475,7 +475,7 @@ contains no `eval` and no duality.
 | `measurePreserving_inv_mul` | `measurePreserving_div_left` (`Group/Measure.lean:387`) |
 | `translateLp` + its lemma set, `continuous_translateLp` | `Lp.compMeasurePreservingₗᵢ` (`LpSpace/Basic.lean:630`); `DomMulAct` action + `Lp.instContinuousSMulDomMulAct` (`LpSpace/DomAct/Continuous.lean:53` — jointly continuous, weaker hypotheses) |
 | `norm_sub_eq_integral` | `L1.norm_eq_integral_norm` (`Integral/Bochner/Basic.lean:904`) + `Lp.coeFn_sub` |
-| `Circle.norm_coe_sub_one_le_abs_arg` (as proved) | `Complex.norm_exp_I_mul_ofReal_sub_one_le` (`Trigonometric/Bounds.lean:260`) + `Circle.exp_arg` |
+| `Circle.norm_coe_sub_one_le_abs_arg` (as proved) | `Real.norm_exp_I_mul_ofReal_sub_one_le` (`Trigonometric/Bounds.lean:260`) + `Circle.exp_arg` |
 | `unitizationInrCLM`, `toLp_inr_mul` | `WithLp.unitization_isometry_inr` / `unitization_mul` (`UnitizationL1.lean:91`) |
 | `ZeroAtInftyContinuousMap.integrable` (as new content) | `BoundedContinuousFunction.integrable` (`Integral/BoundedContinuousFunction.lean:99`) via `toBCF` |
 | `norm_posPairing_mul_sq_le` (as bespoke proof) | `inner_mul_inner_self_le` (`InnerProductSpace/Basic.lean:282`) via `PreInnerProductSpace.Core` |

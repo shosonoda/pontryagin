@@ -24,7 +24,7 @@ bounds through the unitization, density of transforms in $`C_0(\hat{G})`, and
 Fourier–Stieltjes uniqueness.
 :::
 
-:::definition "l1_fourier_hom" (parent := "spectrum") (lean := "L1G.fourier, L1G.fourierHom")
+:::definition "l1_fourier_hom" (parent := "spectrum") (lean := "MeasureTheory.L1G.fourier, MeasureTheory.L1G.fourierHom")
 **The Fourier transform on $`L^1` classes.** `L1G.fourier μ F` is the Fourier
 transform of an $`L^1` class; by {uses "fourier_continuous"}[] and
 {uses "riemann_lebesgue"}[] it lands in $`C_0(\hat{G}, \mathbb{C})`, and by
@@ -33,7 +33,7 @@ transform of an $`L^1` class; by {uses "fourier_continuous"}[] and
 algebras on {uses "l1_algebra_def"}[].
 :::
 
-:::theorem "fourier_separates" (parent := "spectrum") (lean := "fourierTransform_separates")
+:::theorem "fourier_separates" (parent := "spectrum") (lean := "PontryaginDual.fourierTransform_separates")
 **Separation.** Distinct characters $`\chi \neq \chi'` of $`G` are separated by
 the Fourier transform of some continuous compactly supported function:
 $`\widehat{f}(\chi) \neq \widehat{f}(\chi')`.
@@ -46,7 +46,7 @@ Pick $`x` with $`\chi(x) \neq \chi'(x)` and a small bump $`h` near $`x`
 differently.
 :::
 
-:::theorem "fourier_nonvanishing" (parent := "spectrum") (lean := "exists_fourierTransform_eq_one")
+:::theorem "fourier_nonvanishing" (parent := "spectrum") (lean := "PontryaginDual.exists_fourierTransform_eq_one")
 **Non-vanishing.** For every character $`\chi \in \hat{G}` there is a continuous
 compactly supported $`f` with $`\widehat{f}(\chi) = 1`; the transform does not
 vanish identically at any point of the dual.
@@ -58,7 +58,7 @@ $`f = h \cdot \chi`; modulation becomes translation in the dual
 ({uses "fourier_def"}[]), so $`\widehat{f}(\chi) = \widehat{h}(1) = \int h = 1`.
 :::
 
-:::theorem "character_classification" (parent := "spectrum") (lean := "L1G.characterSpace_exists_char")
+:::theorem "character_classification" (parent := "spectrum") (lean := "MeasureTheory.L1G.characterSpace_exists_char")
 **Character classification.** Every character $`\varphi` of the Banach algebra
 $`L^1(G)` is evaluation of the Fourier transform at a unique point of the
 Pontryagin dual: there is a unique $`\chi \in \hat{G}` with
@@ -74,7 +74,7 @@ $`F \mapsto \widehat{F}(\chi)` via {uses "l1_fourier_hom"}[]. Uniqueness is
 {uses "fourier_separates"}[].
 :::
 
-:::theorem "spectrum_unitization" (parent := "spectrum") (lean := "L1G.spectrum_unitization_subset")
+:::theorem "spectrum_unitization" (parent := "spectrum") (lean := "MeasureTheory.L1G.spectrum_unitization_subset")
 **Spectra through the unitization.** In the unital commutative Banach algebra
 $`\mathrm{WithLp}\ 1\ (\mathrm{Unitization}\ \mathbb{C}\ (L^1 G))`, the spectrum
 of $`F \in L^1(G)` is contained in
@@ -88,7 +88,7 @@ is evaluation of the transform by {uses "character_classification"}[]; Gelfand
 theory identifies the spectrum with the character values.
 :::
 
-:::theorem "gelfand_bound" (parent := "spectrum") (lean := "L1G.exists_norm_npow_rpow_le")
+:::theorem "gelfand_bound" (parent := "spectrum") (lean := "MeasureTheory.L1G.exists_norm_npow_rpow_le")
 **The spectral-radius bound.** If
 $`\lVert \widehat{F} \rVert_\infty \le C`, then for every $`\varepsilon > 0` and
 all large $`n`,
@@ -104,7 +104,7 @@ $`\rho(F) = \lim \lVert F^n \rVert^{1/n}` transfers the bound to convolution
 powers.
 :::
 
-:::theorem "fourier_dense" (parent := "spectrum") (lean := "dense_ccFourierSubalgebra")
+:::theorem "fourier_dense" (parent := "spectrum") (lean := "PontryaginDual.dense_ccFourierSubalgebra")
 **Density of transforms.** The Fourier transforms of continuous compactly
 supported functions form a dense non-unital star subalgebra
 `ccFourierSubalgebra μ` of $`C_0(\hat{G}, \mathbb{C})`.
@@ -117,7 +117,7 @@ nowhere by {uses "fourier_nonvanishing"}[], so
 {uses "stone_weierstrass_c0"}[] applies.
 :::
 
-:::theorem "fs_uniqueness" (parent := "spectrum") (lean := "measure_ext_of_forall_integral_char_eq")
+:::theorem "fs_uniqueness" (parent := "spectrum") (lean := "PontryaginDual.measure_ext_of_forall_integral_char_eq")
 **Fourier–Stieltjes uniqueness (positive form).** Two finite positive regular
 measures $`\sigma_1, \sigma_2` on $`\hat{G}` with
 $`\int_{\hat{G}} \chi(x)\, d\sigma_1(\chi) = \int_{\hat{G}} \chi(x)\, d\sigma_2(\chi)`

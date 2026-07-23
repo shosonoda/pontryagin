@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: The pontryagin contributors
 -/
 import Pontryagin.Convolution
-import Pontryagin.Density
+import Pontryagin.Mathlib.Density
 import Pontryagin.DualPolars
 
 /-!
@@ -81,6 +81,8 @@ theorem sqrt_two_div_two_le_norm_coe_sub_one {z : Circle}
 
 end Circle
 
+namespace PontryaginDual
+
 /-! ### Comparing two characters through their quotient -/
 
 section DualHelpers
@@ -89,7 +91,7 @@ variable {G : Type*} [CommGroup G] [TopologicalSpace G]
 
 /-- The pointwise distance of two characters is the pointwise distance of their quotient
 from `1`. -/
-theorem PontryaginDual.norm_coe_sub_coe (χ χ₀ : PontryaginDual G) (x : G) :
+theorem norm_coe_sub_coe (χ χ₀ : PontryaginDual G) (x : G) :
     ‖(χ x : ℂ) - (χ₀ x : ℂ)‖ = ‖((χ / χ₀) x : ℂ) - 1‖ := by
   have hsplit : (χ x : ℂ) - (χ₀ x : ℂ) = (((χ / χ₀) x : ℂ) - 1) * (χ₀ x : ℂ) := by
     have hdiv : (χ / χ₀) x = χ x / χ₀ x := rfl
@@ -153,7 +155,7 @@ variable {G : Type*} [CommGroup G] [TopologicalSpace G] [IsTopologicalGroup G]
 variable {f g : G → ℂ}
 
 /-- The integrand of the Fourier transform of an integrable function is integrable. -/
-theorem MeasureTheory.Integrable.mul_conj_char (hf : Integrable f μ)
+theorem _root_.MeasureTheory.Integrable.mul_conj_char (hf : Integrable f μ)
     (χ : PontryaginDual G) : Integrable (fun x => f x * conj (χ x : ℂ)) μ :=
   hf.mul_bdd (c := 1)
     ((Complex.continuous_conj.comp
@@ -208,7 +210,7 @@ theorem fourierTransform_mstar (f : G → ℂ) (χ : PontryaginDual G) :
   calc fourierTransform μ (mstar f) χ
       = ∫ x, conj (f x⁻¹ * conj (χ x⁻¹ : ℂ)) ∂μ := by
         refine integral_congr_ae (Eventually.of_forall fun x => ?_)
-        simp only [mstar_apply, map_mul, map_inv, Circle.coe_inv_eq_conj, RCLike.conj_conj]
+        simp only [mstar_apply, _root_.map_mul, map_inv, Circle.coe_inv_eq_conj, RCLike.conj_conj]
     _ = ∫ x, conj (f x * conj (χ x : ℂ)) ∂μ :=
         integral_inv_eq_self (fun x => conj (f x * conj (χ x : ℂ))) μ
     _ = conj (fourierTransform μ f χ) := integral_conj
@@ -222,7 +224,7 @@ theorem fourierTransform_mtranslate (f : G → ℂ) (a : G) (χ : PontryaginDual
         (integral_mul_left_eq_self (fun x => f (a⁻¹ * x) * conj (χ x : ℂ)) a).symm
     _ = ∫ x, conj (χ a : ℂ) * (f x * conj (χ x : ℂ)) ∂μ := by
         refine integral_congr_ae (Eventually.of_forall fun x => ?_)
-        simp only [inv_mul_cancel_left, map_mul, Circle.coe_mul]
+        simp only [inv_mul_cancel_left, _root_.map_mul, Circle.coe_mul]
         ring
     _ = conj (χ a : ℂ) * fourierTransform μ f χ := integral_const_mul _ _
 
@@ -259,7 +261,7 @@ theorem fourierTransform_mconv (hf : Continuous f) (hf' : HasCompactSupport f)
         refine integral_congr_ae (Eventually.of_forall fun x => ?_)
         exact (integral_mul_const _ _).symm
     _ = ∫ y, ∫ x, f y * g (y⁻¹ * x) * conj (χ x : ℂ) ∂μ ∂μ :=
-        integral_integral_swap_of_continuous_compactSupport hkc hks
+        integral_integral_swap_of_hasCompactSupport hkc hks
     _ = ∫ y, f y * conj (χ y : ℂ) * fourierTransform μ g χ ∂μ := by
         refine integral_congr_ae (Eventually.of_forall fun y => ?_)
         calc ∫ x, f y * g (y⁻¹ * x) * conj (χ x : ℂ) ∂μ
@@ -410,7 +412,7 @@ theorem tendsto_fourierTransform_cocompact (hf : Integrable f μ) :
       _ = ‖translateLp μ 1 y F - F‖ := hbridge
       _ < ε * (Real.sqrt 2 / 2) := hyU'
   have hconj : ‖conj ((χ y : Circle) : ℂ) - 1‖ = ‖(χ y : ℂ) - 1‖ := by
-    rw [show conj ((χ y : Circle) : ℂ) - 1 = conj ((χ y : ℂ) - 1) by rw [map_sub, map_one],
+    rw [show conj ((χ y : Circle) : ℂ) - 1 = conj ((χ y : ℂ) - 1) by rw [map_sub, _root_.map_one],
       RCLike.norm_conj]
   have hmul : Real.sqrt 2 / 2 * ‖fourierTransform μ f χ‖ < ε * (Real.sqrt 2 / 2) :=
     calc Real.sqrt 2 / 2 * ‖fourierTransform μ f χ‖
@@ -459,7 +461,7 @@ private theorem exists_nhds_forall_norm_sub_one_le {K : Set (PontryaginDual G)}
     have hc : Continuous fun x : G => ‖(χ₀ x : ℂ) - 1‖ :=
       ((continuous_induced_dom.comp (map_continuous χ₀)).sub continuous_const).norm
     have h1 : Set.Iio (ε / 2) ∈ nhds ((fun x : G => ‖(χ₀ x : ℂ) - 1‖) 1) := by
-      have h2 : ((χ₀ (1 : G) : Circle) : ℂ) = 1 := by rw [map_one, Circle.coe_one]
+      have h2 : ((χ₀ (1 : G) : Circle) : ℂ) = 1 := by rw [_root_.map_one, Circle.coe_one]
       simpa [h2] using Iio_mem_nhds (by linarith : (0 : ℝ) < ε / 2)
     exact hc.continuousAt.preimage_mem_nhds h1
   refine ⟨C ∩ ⋂ χ₀ ∈ t, {x : G | ‖(χ₀ x : ℂ) - 1‖ < ε / 2},
@@ -515,7 +517,7 @@ theorem exists_nhds_forall_bump_fourierTransform_close {K : Set (PontryaginDual 
     by_cases hx : x ∈ tsupport h
     · have hb : ‖conj (χ x : ℂ) - 1‖ ≤ ε := by
         rw [show conj ((χ x : Circle) : ℂ) - 1 = conj ((χ x : ℂ) - 1) by
-          rw [map_sub, map_one], RCLike.norm_conj]
+          rw [map_sub, _root_.map_one], RCLike.norm_conj]
         exact hUsmall χ hχK x (hhsupp hx)
       calc h x * ‖conj (χ x : ℂ) - 1‖
           ≤ h x * ε := mul_le_mul_of_nonneg_left hb (hhpos x)
@@ -528,3 +530,5 @@ theorem exists_nhds_forall_bump_fourierTransform_close {K : Set (PontryaginDual 
     _ = ε := by rw [integral_const_mul, hhone, mul_one]
 
 end Haar
+
+end PontryaginDual

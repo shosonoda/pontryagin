@@ -4,8 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: The pontryagin contributors
 -/
 import Pontryagin.Spectrum
-import Pontryagin.StoneWeierstrassC0
-import Pontryagin.FiniteMeasureFubini
+import Pontryagin.Mathlib.StoneWeierstrassC0
+import Pontryagin.Mathlib.FiniteMeasureFubini
 import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
 
 /-!
@@ -40,7 +40,7 @@ measures on the dual group.
 * `measure_ext_of_forall_integral_char_eq`: **uniqueness of Fourier–Stieltjes transforms**:
   two finite positive regular measures on `Ĝ` whose character integrals
   `∫ χ, χ x ∂σ` agree for every `x : G` are equal.  The proof combines the Fubini theorem
-  of `Pontryagin.FiniteMeasureFubini` (to convert integrals of transforms into transforms
+  of `Pontryagin.Mathlib.FiniteMeasureFubini` (to convert integrals of transforms into transforms
   of the hypothesis), the density theorem, and Mathlib's
   `Measure.ext_of_integral_eq_on_compactlySupported`.
 -/
@@ -57,6 +57,8 @@ set_option linter.unusedSectionVars false
 -- `show` is used to beta-reduce goals and to cross the definitional equality between the
 -- bundled `C₀` transform and `fourierTransform`.
 set_option linter.style.show false
+
+namespace PontryaginDual
 
 variable {G : Type*} [CommGroup G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G] [T2Space G] [MeasurableSpace G] [BorelSpace G]
@@ -178,7 +180,7 @@ section C0Integration
 
 variable {Y : Type*} [TopologicalSpace Y]
 
-theorem ZeroAtInftyContinuousMap.norm_apply_le (v : C₀(Y, ℂ)) (p : Y) : ‖v p‖ ≤ ‖v‖ := by
+theorem _root_.ZeroAtInftyContinuousMap.norm_apply_le (v : C₀(Y, ℂ)) (p : Y) : ‖v p‖ ≤ ‖v‖ := by
   rw [← ZeroAtInftyContinuousMap.norm_toBCF_eq_norm]
   exact BoundedContinuousFunction.norm_coe_le_norm v.toBCF p
 
@@ -187,12 +189,12 @@ variable {mY : MeasurableSpace Y} [OpensMeasurableSpace Y]
 
 /-- A continuous function vanishing at infinity is integrable against every finite Borel
 measure. -/
-theorem ZeroAtInftyContinuousMap.integrable (v : C₀(Y, ℂ)) : Integrable (⇑v) σ :=
+theorem _root_.ZeroAtInftyContinuousMap.integrable (v : C₀(Y, ℂ)) : Integrable (⇑v) σ :=
   (integrable_const ‖v‖).mono' (map_continuous v).aestronglyMeasurable
     (Eventually.of_forall fun p => v.norm_apply_le p)
 
 /-- Integration against a finite measure is a continuous functional on `C₀`. -/
-theorem continuous_integral_zeroAtInfty :
+theorem _root_.MeasureTheory.continuous_integral_zeroAtInfty :
     Continuous fun v : C₀(Y, ℂ) => ∫ p, v p ∂σ := by
   refine (LipschitzWith.of_dist_le_mul (K := (σ Set.univ).toNNReal) fun v w => ?_).continuous
   rw [dist_eq_norm, dist_eq_norm]
@@ -220,7 +222,7 @@ variable {X : Type*} [TopologicalSpace X] [T2Space X] [LocallyCompactSpace X]
 measure that is finite on compacts, a continuous function whose integral against every
 nonnegative continuous compactly supported real test function vanishes is identically
 zero.  (No global bound on `u` is needed: the test functions have compact support.) -/
-theorem Continuous.eq_zero_of_forall_integral_cc_eq_zero {u : X → ℂ} (hu : Continuous u)
+theorem _root_.Continuous.eq_zero_of_forall_integral_cc_eq_zero {u : X → ℂ} (hu : Continuous u)
     (ν : Measure X) [ν.IsOpenPosMeasure] [IsFiniteMeasureOnCompacts ν]
     (h : ∀ f : X → ℝ, Continuous f → HasCompactSupport f → (∀ x, 0 ≤ f x) →
       ∫ x, f x • u x ∂ν = 0) :
@@ -384,3 +386,5 @@ theorem measure_ext_of_forall_integral_char_eq
   exact_mod_cast h2
 
 end FourierStieltjes
+
+end PontryaginDual

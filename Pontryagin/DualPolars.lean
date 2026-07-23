@@ -121,17 +121,8 @@ theorem abs_arg_le_div_of_pow_mem_centeredArc {z : Circle} {m : ℕ} (hm : 0 < m
 /-- The chord is shorter than the arc: `‖(z : ℂ) - 1‖ ≤ |Complex.arg z|`. -/
 theorem norm_coe_sub_one_le_abs_arg (z : Circle) :
     ‖(z : ℂ) - 1‖ ≤ |Complex.arg z| := by
-  obtain ⟨t, ht1, ht2, rfl⟩ : ∃ t : ℝ, -π < t ∧ t ≤ π ∧ Circle.exp t = z :=
-    ⟨Complex.arg z, Complex.neg_pi_lt_arg z, Complex.arg_le_pi z, Circle.exp_arg z⟩
-  rw [Circle.arg_exp ht1 ht2, Circle.coe_exp]
-  have hre : (Complex.exp ((t : ℂ) * Complex.I) - 1).re = Real.cos t - 1 := by
-    simp [Complex.exp_ofReal_mul_I_re]
-  have him : (Complex.exp ((t : ℂ) * Complex.I) - 1).im = Real.sin t := by
-    simp [Complex.exp_ofReal_mul_I_im]
-  have hsq : ‖Complex.exp ((t : ℂ) * Complex.I) - 1‖ ^ 2 ≤ |t| ^ 2 := by
-    rw [← Complex.normSq_eq_norm_sq, Complex.normSq_apply, hre, him, sq_abs]
-    nlinarith [Real.sin_sq_add_cos_sq t, Real.one_sub_sq_div_two_le_cos (x := t)]
-  exact le_of_pow_le_pow_left₀ two_ne_zero (abs_nonneg t) hsq
+  have h := Real.norm_exp_I_mul_ofReal_sub_one_le (x := Complex.arg (z : ℂ))
+  rwa [mul_comm, ← Circle.coe_exp, Circle.exp_arg, Real.norm_eq_abs] at h
 
 end Circle
 

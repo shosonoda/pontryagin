@@ -6,13 +6,17 @@ Authors: The pontryagin contributors
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.Measure.Regular
 import Mathlib.Topology.UrysohnsLemma
-import Pontryagin.CcFubini
+import Pontryagin.Mathlib.CcFubini
 
 /-!
 # Fubini for kernels compactly supported in one variable, against a finite measure
 
-`Pontryagin.CcFubini` provides the iterated-integral swap for jointly continuous kernels that
-are compactly supported *in both variables*. This file extends the swap to bounded jointly
+This file fills a gap in Mathlib (general-purpose material with no project-specific content)
+and is a candidate for upstreaming; see `UPSTREAMING.md` for the audit and target locations.
+
+Mathlib's `integral_integral_swap_of_hasCompactSupport` swaps iterated integrals of jointly
+continuous kernels that are compactly supported *in both variables*. This file extends the
+swap to bounded jointly
 continuous kernels `F : X → Y → E` that are compactly supported in only **one** variable (the
 `y`-variable, say), integrated in the other variable against a **finite inner regular**
 measure `σ`:
@@ -25,8 +29,8 @@ but the character-space integration happens against finite (regular) measures.
 
 As before there are **no product-measure or product-σ-algebra hypotheses**: the proof
 truncates the kernel by Urysohn cutoffs `φ n` equal to `1` on an increasing sequence of
-compact sets that exhausts `σ` (inner regularity), applies the compactly supported swap of
-`Pontryagin.CcFubini` to each truncation `φ n x • F x y`, and passes to the limit on both
+compact sets that exhausts `σ` (inner regularity), applies the compactly supported swap
+to each truncation `φ n x • F x y`, and passes to the limit on both
 sides by dominated convergence.
 
 ## Main statements
@@ -53,6 +57,8 @@ and `Y` are locally compact Hausdorff groups and `σ` is a finite Radon-type mea
 
 open Filter Function MeasureTheory Set
 open scoped ENNReal Topology
+
+namespace MeasureTheory
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -145,7 +151,7 @@ theorem integral_integral_swap_of_finite_of_compactSupport
     obtain ⟨n, hn⟩ := mem_iUnion.1 hx
     exact eventually_atTop.2 ⟨n, fun m hm ↦ hφ1 m (hKsmono hm hn)⟩
   -- Step 3: the truncated kernels `φ n x • F x y` are continuous and compactly supported,
-  -- so the swap of `Pontryagin.CcFubini` applies to them.
+  -- so Mathlib's compactly supported swap applies to them.
   have hFncont : ∀ n, Continuous (uncurry fun x y ↦ φ n x • F x y) := fun n ↦
     ((φ n).continuous.comp continuous_fst).smul hF
   have hFnsupp : ∀ n, HasCompactSupport (uncurry fun x y ↦ φ n x • F x y) := by
@@ -159,7 +165,7 @@ theorem integral_integral_swap_of_finite_of_compactSupport
       rw [hsupp x y hy, smul_zero]
     · rw [image_eq_zero_of_notMem_tsupport hx, zero_smul]
   have hswap : ∀ n : ℕ, ∫ x, ∫ y, φ n x • F x y ∂ν ∂σ = ∫ y, ∫ x, φ n x • F x y ∂σ ∂ν :=
-    fun n ↦ integral_integral_swap_of_continuous_compactSupport (hFncont n) (hFnsupp n)
+    fun n ↦ integral_integral_swap_of_hasCompactSupport (hFncont n) (hFnsupp n)
   -- The partial integral in `y` is continuous and uniformly bounded.
   have hg : Continuous fun x ↦ ∫ y, F x y ∂ν :=
     continuous_integral_right_of_forall_compl_eq_zero hF hK hsupp
@@ -223,3 +229,5 @@ theorem integral_integral_swap_of_finite_of_compactSupport
         rw [hn, one_smul]
   -- Step 5: identify the limits.
   exact tendsto_nhds_unique hLHS (hRHS.congr fun n ↦ (hswap n).symm)
+
+end MeasureTheory

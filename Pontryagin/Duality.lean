@@ -6,7 +6,7 @@ Authors: The pontryagin contributors
 import Pontryagin.Basic
 import Pontryagin.EvalInjective
 import Pontryagin.Plancherel
-import Pontryagin.Topology
+import Pontryagin.Mathlib.Topology
 
 /-!
 # Pontryagin duality: assembly
@@ -27,7 +27,7 @@ group is closed.
 
 noncomputable section
 
-open Function Topology
+open Function MeasureTheory Topology
 
 namespace PontryaginDual
 

@@ -19,7 +19,7 @@ The Fourier transform of integrable functions on $`G`, its symmetries, continuit
 and the Riemann–Lebesgue lemma.
 :::
 
-:::definition "fourier_def" (parent := "fourier") (lean := "fourierTransform")
+:::definition "fourier_def" (parent := "fourier") (lean := "PontryaginDual.fourierTransform")
 **The Fourier transform.** For $`f \colon G \to \mathbb{C}` and a character
 $`\chi \in \hat{G}`,
 $`\widehat{f}(\chi) = \int_G f(x)\, \overline{\chi(x)}\, d\mu(x)`,
@@ -29,7 +29,7 @@ involution of {uses "mconv_def" (intent := "auxiliary")}[] with complex
 conjugation.
 :::
 
-:::theorem "fourier_mconv" (parent := "fourier") (lean := "fourierTransform_mconv")
+:::theorem "fourier_mconv" (parent := "fourier") (lean := "PontryaginDual.fourierTransform_mconv")
 **The transform is multiplicative on convolutions:** for continuous compactly
 supported $`f, g`,
 $`\widehat{f \star g} = \widehat{f} \cdot \widehat{g}`.
@@ -42,7 +42,7 @@ $`\overline{\chi(x)} = \overline{\chi(y)}\, \overline{\chi(y^{-1}x)}` before
 translating the inner integral.
 :::
 
-:::theorem "fourier_continuous" (parent := "fourier") (lean := "continuous_fourierTransform")
+:::theorem "fourier_continuous" (parent := "fourier") (lean := "PontryaginDual.continuous_fourierTransform")
 The Fourier transform $`\widehat{f}` of an integrable function is continuous on
 $`\hat{G}` (with its compact-open topology).
 :::
@@ -53,7 +53,7 @@ compactly supported $`f` the transform is continuous by uniform smallness of
 $`\lVert \chi - \chi_0 \rVert` on the support, using {uses "fourier_def"}[].
 :::
 
-:::theorem "riemann_lebesgue" (parent := "fourier") (lean := "tendsto_fourierTransform_cocompact")
+:::theorem "riemann_lebesgue" (parent := "fourier") (lean := "PontryaginDual.tendsto_fourierTransform_cocompact")
 **Riemann–Lebesgue lemma.** The Fourier transform of an integrable function
 vanishes at infinity on the dual group: $`\widehat{f}(\chi) \to 0` along the
 cocompact filter of $`\hat{G}`.
@@ -68,7 +68,7 @@ neighborhood on which translation moves $`f` little
 {uses "compact_polar"}[]. Uses {uses "fourier_def"}[].
 :::
 
-:::theorem "bump_fourier_close" (parent := "fourier") (lean := "exists_nhds_forall_bump_fourierTransform_close")
+:::theorem "bump_fourier_close" (parent := "fourier") (lean := "PontryaginDual.exists_nhds_forall_bump_fourierTransform_close")
 **Transforms of bumps are near $`1` on compacts.** For every compact
 $`K \subseteq \hat{G}` and $`\varepsilon > 0` there is a neighborhood $`U` of
 $`1` in $`G` such that every normalized bump $`h` supported in $`U` has

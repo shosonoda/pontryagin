@@ -33,6 +33,8 @@ noncomputable section
 open Function MeasureTheory Set Topology
 open scoped ENNReal Pointwise
 
+namespace MeasureTheory
+
 /-! ### Translation of functions -/
 
 section MtranslateCore
@@ -67,7 +69,7 @@ section MtranslateTopology
 
 variable {G : Type*} [CommGroup G] [TopologicalSpace G] [IsTopologicalGroup G] {E : Type*}
 
-theorem Continuous.mtranslate [TopologicalSpace E] {f : G → E} (hf : Continuous f) (a : G) :
+theorem _root_.Continuous.mtranslate [TopologicalSpace E] {f : G → E} (hf : Continuous f) (a : G) :
     Continuous (mtranslate a f) :=
   hf.comp (continuous_const_mul a⁻¹)
 
@@ -75,8 +77,9 @@ theorem tsupport_mtranslate [Zero E] (a : G) (f : G → E) :
     tsupport (mtranslate a f) = a • tsupport f :=
   (congrArg closure (support_mtranslate a f)).trans (closure_smul a (support f))
 
-theorem HasCompactSupport.mtranslate [Zero E] {f : G → E} (hf : HasCompactSupport f) (a : G) :
-    HasCompactSupport (_root_.mtranslate a f) := by
+theorem _root_.HasCompactSupport.mtranslate [Zero E] {f : G → E} (hf : HasCompactSupport f)
+    (a : G) :
+    HasCompactSupport (mtranslate a f) := by
   have h := IsCompact.smul a hf
   rwa [← tsupport_mtranslate] at h
 
@@ -137,7 +140,7 @@ theorem eLpNorm_mtranslate {p : ℝ≥0∞} {f : G → E} (hf : AEStronglyMeasur
   eLpNorm_comp_measurePreserving hf (measurePreserving_mul_left μ a⁻¹)
 
 theorem MemLp.mtranslate {p : ℝ≥0∞} {f : G → E} (hf : MemLp f p μ) (a : G) :
-    MemLp (_root_.mtranslate a f) p μ :=
+    MemLp (mtranslate a f) p μ :=
   hf.comp_measurePreserving (measurePreserving_mul_left μ a⁻¹)
 
 theorem integral_mtranslate [NormedSpace ℝ E] (a : G) (f : G → E) :
@@ -221,3 +224,5 @@ theorem continuous_translateLp (hp : p ≠ ∞) (f : Lp ℂ p μ) :
     (fun a ↦ measurePreserving_mul_left μ a⁻¹) hp
 
 end TranslateLp
+
+end MeasureTheory

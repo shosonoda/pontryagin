@@ -82,7 +82,7 @@ translates of a small neighborhood of $`1`; each Riemann sum is nonnegative by
 {uses "cc_fubini"}[]. No product measures are used.
 :::
 
-:::definition "pos_pairing" (parent := "bochner") (lean := "posPairing")
+:::definition "pos_pairing" (parent := "bochner") (lean := "MeasureTheory.posPairing")
 **The positive functional.** For $`\varphi` continuous, bounded, of positive
 type, `posPairing μ hφ hφc` is the continuous linear functional
 $`T(F) = \int_G F(x)\, \varphi(x)\, d\mu(x)` on $`L^1(\mu)`, with
@@ -92,7 +92,7 @@ involution, and nonnegative on star-squares by
 {uses "positive_type_integral"}[].
 :::
 
-:::theorem "pairing_fourier_bound" (parent := "bochner") (lean := "norm_posPairing_le_fourier")
+:::theorem "pairing_fourier_bound" (parent := "bochner") (lean := "MeasureTheory.norm_posPairing_le_fourier")
 **The fundamental spectral bound.** For every $`F \in L^1(\mu)`,
 $`\lVert T(F) \rVert \le \mathrm{Re}\,\varphi(1) \cdot \lVert \widehat{F} \rVert_\infty`.
 The functional {uses "pos_pairing"}[] is thus continuous for the sup-norm of the
@@ -108,7 +108,7 @@ formula {uses "gelfand_bound"}[] sends the correction terms to
 $`\lVert \widehat{F} \rVert_\infty`.
 :::
 
-:::definition "bochner_functional" (parent := "bochner") (lean := "bochnerCLM")
+:::definition "bochner_functional" (parent := "bochner") (lean := "MeasureTheory.bochnerCLM")
 **Transport to $`C_0(\hat{G})`.** By {uses "pairing_fourier_bound"}[] the
 functional {uses "pos_pairing"}[] descends along the Fourier transform to a
 well-defined continuous linear functional `bochnerCLM` on the dense subalgebra of

@@ -62,7 +62,7 @@ theorem, no Krein–Milman):
 
 noncomputable section
 
-open Filter Function MeasureTheory Set Topology
+open Filter Function MeasureTheory Set Topology PontryaginDual
 open scoped ComplexConjugate ComplexOrder ENNReal NNReal ZeroAtInfty CompactlySupported
 
 -- The sections below deliberately use one coarse hypothesis block (locally compact Hausdorff
@@ -73,33 +73,7 @@ set_option linter.unusedSectionVars false
 -- between the type synonym `L1G μ` and `Lp ℂ 1 μ`.
 set_option linter.style.show false
 
-/-! ### The nonnegative complex numbers form a closed set -/
-
-section ComplexOrderTopology
-
-/-- The set of nonnegative complex numbers (for `ComplexOrder`) is closed. -/
-theorem Complex.isClosed_nonneg : IsClosed {z : ℂ | 0 ≤ z} := by
-  have h : {z : ℂ | 0 ≤ z} = Complex.re ⁻¹' Set.Ici 0 ∩ Complex.im ⁻¹' {0} := by
-    ext z
-    simp only [Set.mem_setOf_eq, Set.mem_inter_iff, Set.mem_preimage, Set.mem_Ici,
-      Set.mem_singleton_iff, Complex.nonneg_iff]
-    exact ⟨fun ⟨h1, h2⟩ => ⟨h1, h2.symm⟩, fun ⟨h1, h2⟩ => ⟨h1, h2.symm⟩⟩
-  rw [h]
-  exact (isClosed_Ici.preimage Complex.continuous_re).inter
-    (isClosed_singleton.preimage Complex.continuous_im)
-
-/-- A complex number approximated arbitrarily well by nonnegative complex numbers is
-nonnegative. -/
-theorem complex_nonneg_of_forall_norm_sub_le {z : ℂ}
-    (h : ∀ ε : ℝ, 0 < ε → ∃ w : ℂ, 0 ≤ w ∧ ‖z - w‖ ≤ ε) : 0 ≤ z := by
-  have hz : z ∈ closure {w : ℂ | 0 ≤ w} := by
-    rw [Metric.mem_closure_iff]
-    intro ε hε
-    obtain ⟨w, hw0, hwd⟩ := h (ε / 2) (half_pos hε)
-    exact ⟨w, hw0, lt_of_le_of_lt (by rwa [dist_eq_norm]) (half_lt_self hε)⟩
-  rwa [Complex.isClosed_nonneg.closure_eq] at hz
-
-end ComplexOrderTopology
+namespace MeasureTheory
 
 /-! ### Density of compactly supported functions in `C₀` -/
 
@@ -109,7 +83,7 @@ variable {X : Type*} [TopologicalSpace X] [T2Space X] [LocallyCompactSpace X]
 
 /-- **Compactly supported functions are dense in `C₀`**: every `u ∈ C₀(X, ℂ)` is within `ε`
 of an element of `C₀(X, ℂ)` with compact support. -/
-theorem ZeroAtInftyContinuousMap.exists_hasCompactSupport_norm_sub_le (u : C₀(X, ℂ))
+theorem _root_.ZeroAtInftyContinuousMap.exists_hasCompactSupport_norm_sub_le (u : C₀(X, ℂ))
     {ε : ℝ} (hε : 0 < ε) :
     ∃ w : C₀(X, ℂ), HasCompactSupport ⇑w ∧ ‖w - u‖ ≤ ε := by
   -- a compact set outside which `u` is small
@@ -165,7 +139,7 @@ section Equicontinuity
 /-- **Equicontinuity of a compact set of characters**: for a compact set `Q` of characters
 and `ε > 0` there is a neighborhood `W` of `1` in `G` on which every `χ ∈ Q` is uniformly
 within `ε` of `1`. -/
-theorem IsCompact.exists_nhds_one_forall_norm_char_sub_one_le
+theorem _root_.IsCompact.exists_nhds_one_forall_norm_char_sub_one_le
     {Q : Set (PontryaginDual G)} (hQ : IsCompact Q) {ε : ℝ} (hε : 0 < ε) :
     ∃ W ∈ nhds (1 : G), ∀ χ ∈ Q, ∀ x ∈ W, ‖(χ x : ℂ) - 1‖ ≤ ε := by
   obtain ⟨C, hCcomp, hCnhds⟩ := exists_compact_mem_nhds (1 : G)
@@ -191,7 +165,7 @@ theorem IsCompact.exists_nhds_one_forall_norm_char_sub_one_le
     have hc : Continuous fun x : G => ‖(χ₀ x : ℂ) - 1‖ :=
       ((continuous_induced_dom.comp (map_continuous χ₀)).sub continuous_const).norm
     have h1 : Set.Iio (ε / 2) ∈ nhds ((fun x : G => ‖(χ₀ x : ℂ) - 1‖) 1) := by
-      have h2 : ((χ₀ (1 : G) : Circle) : ℂ) = 1 := by rw [map_one, Circle.coe_one]
+      have h2 : ((χ₀ (1 : G) : Circle) : ℂ) = 1 := by rw [_root_.map_one, Circle.coe_one]
       simpa [h2] using Iio_mem_nhds (by linarith : (0 : ℝ) < ε / 2)
     exact hc.continuousAt.preimage_mem_nhds h1
   refine ⟨C ∩ ⋂ χ₀ ∈ t, {x : G | ‖(χ₀ x : ℂ) - 1‖ < ε / 2},
@@ -222,7 +196,7 @@ include hφ hφc
 
 /-- The integrand of the positive pairing is integrable: an `L¹` function times a bounded
 continuous function. -/
-theorem integrable_coeFn_mul_posType (F : Lp ℂ 1 μ) :
+private theorem integrable_coeFn_mul_posType (F : Lp ℂ 1 μ) :
     Integrable (fun x => F x * φ x) μ :=
   (L1.integrable_coeFn F).mul_bdd hφc.aestronglyMeasurable
     (Eventually.of_forall fun x => hφ.norm_apply_le x)
@@ -298,7 +272,7 @@ theorem posPairing_L1star (F : Lp ℂ 1 μ) :
     _ = ∫ x, conj (F x * φ x) ∂μ := by
         refine integral_congr_ae (Eventually.of_forall fun x => ?_)
         show conj (F x) * φ x⁻¹ = conj (F x * φ x)
-        rw [hφ.apply_inv x, ← map_mul]
+        rw [hφ.apply_inv x, ← _root_.map_mul]
     _ = conj (∫ x, F x * φ x ∂μ) := integral_conj
     _ = conj (posPairing μ hφ hφc F) := by rw [posPairing_apply]
 
@@ -312,7 +286,7 @@ theorem posPairing_star_mul_self_nonneg (F : Lp ℂ 1 μ) :
     exact (mulCLM μ).continuous₂.comp ((continuous_L1star μ).prodMk continuous_id)
   have hclosed : IsClosed ((fun K : Lp ℂ 1 μ =>
       posPairing μ hφ hφc (mulCLM μ (L1star μ K) K)) ⁻¹' {z : ℂ | 0 ≤ z}) :=
-    Complex.isClosed_nonneg.preimage hcont
+    (isClosed_Ici (a := (0 : ℂ))).preimage hcont
   have hsub : (ccSubmodule μ : Set (Lp ℂ 1 μ)) ⊆ (fun K : Lp ℂ 1 μ =>
       posPairing μ hφ hφc (mulCLM μ (L1star μ K) K)) ⁻¹' {z : ℂ | 0 ≤ z} := by
     intro K hK
@@ -771,7 +745,8 @@ end FourierBound
 section CcAlgebra
 
 /-- The bundled transform is additive in the function. -/
-theorem ccFourierC0_add {f g : G → ℂ} (hfc : Continuous f) (hfs : HasCompactSupport f)
+theorem _root_.PontryaginDual.ccFourierC0_add {f g : G → ℂ} (hfc : Continuous f)
+    (hfs : HasCompactSupport f)
     (hgc : Continuous g) (hgs : HasCompactSupport g) :
     ccFourierC0 μ (f + g) (hfc.add hgc) (hfs.add hgs)
       = ccFourierC0 μ f hfc hfs + ccFourierC0 μ g hgc hgs := by
@@ -781,7 +756,7 @@ theorem ccFourierC0_add {f g : G → ℂ} (hfc : Continuous f) (hfs : HasCompact
     (hgc.integrable_of_hasCompactSupport hgs)) χ
 
 /-- The bundled transform is homogeneous in the function. -/
-theorem ccFourierC0_smul (c : ℂ) {f : G → ℂ} (hfc : Continuous f)
+theorem _root_.PontryaginDual.ccFourierC0_smul (c : ℂ) {f : G → ℂ} (hfc : Continuous f)
     (hfs : HasCompactSupport f) :
     ccFourierC0 μ (c • f) (hfc.const_smul c) (hfs.mono (support_const_smul_subset c f))
       = c • ccFourierC0 μ f hfc hfs := by
@@ -790,7 +765,7 @@ theorem ccFourierC0_smul (c : ℂ) {f : G → ℂ} (hfc : Continuous f)
   exact congrFun (fourierTransform_smul μ c f) χ
 
 /-- The bundled transform of the zero function is zero. -/
-theorem ccFourierC0_zero :
+theorem _root_.PontryaginDual.ccFourierC0_zero :
     ccFourierC0 μ (0 : G → ℂ) continuous_const HasCompactSupport.zero = 0 := by
   ext χ
   rw [ZeroAtInftyContinuousMap.zero_apply]
@@ -799,7 +774,8 @@ theorem ccFourierC0_zero :
   simp
 
 /-- The bundled transform intertwines `mstar` and the star of `C₀`. -/
-theorem ccFourierC0_star {f : G → ℂ} (hfc : Continuous f) (hfs : HasCompactSupport f) :
+theorem _root_.PontryaginDual.ccFourierC0_star {f : G → ℂ} (hfc : Continuous f)
+    (hfs : HasCompactSupport f) :
     star (ccFourierC0 μ f hfc hfs) = ccFourierC0 μ (mstar f) hfc.mstar hfs.mstar := by
   ext χ
   rw [ZeroAtInftyContinuousMap.star_apply]
@@ -849,7 +825,7 @@ include hφ hφc
 /-- **Well-definedness of the descended functional**: two `C_c` functions with the same
 Fourier transform have the same positive pairing.  This is the key consequence of the
 fundamental bound `norm_posPairing_le_fourier`. -/
-theorem posPairing_toLpCc_congr {f g : G → ℂ}
+private theorem posPairing_toLpCc_congr {f g : G → ℂ}
     (hfc : Continuous f) (hfs : HasCompactSupport f)
     (hgc : Continuous g) (hgs : HasCompactSupport g)
     (h : ccFourierC0 μ f hfc hfs = ccFourierC0 μ g hgc hgs) :
@@ -883,7 +859,7 @@ theorem posPairing_toLpCc_congr {f g : G → ℂ}
 omit hφ hφc in
 /-- The subspace of `C₀(Ĝ, ℂ)` of Fourier transforms of `C_c` functions, as a submodule
 (the same carrier as `ccFourierSubalgebra`). -/
-def ccFourierSubmodule : Submodule ℂ C₀(PontryaginDual G, ℂ) where
+private def ccFourierSubmodule : Submodule ℂ C₀(PontryaginDual G, ℂ) where
   carrier := {u | ∃ f : G → ℂ, ∃ (hfc : Continuous f) (hfs : HasCompactSupport f),
     u = ccFourierC0 μ f hfc hfs}
   add_mem' := by
@@ -896,23 +872,23 @@ def ccFourierSubmodule : Submodule ℂ C₀(PontryaginDual G, ℂ) where
       (ccFourierC0_smul μ c hfc hfs).symm⟩
 
 omit hφ hφc in
-theorem coe_ccFourierSubmodule :
+private theorem coe_ccFourierSubmodule :
     (ccFourierSubmodule μ : Set C₀(PontryaginDual G, ℂ))
       = (ccFourierSubalgebra μ : Set C₀(PontryaginDual G, ℂ)) := rfl
 
 omit hφ hφc in
-theorem dense_ccFourierSubmodule :
+private theorem dense_ccFourierSubmodule :
     Dense (ccFourierSubmodule μ : Set C₀(PontryaginDual G, ℂ)) := by
   rw [coe_ccFourierSubmodule]
   exact dense_ccFourierSubalgebra μ
 
 omit hφ hφc in
-theorem denseRange_ccFourierSubtypeL :
+private theorem denseRange_ccFourierSubtypeL :
     DenseRange ⇑(ccFourierSubmodule μ).subtypeL :=
   (dense_ccFourierSubmodule μ).denseRange_val
 
 omit hφ hφc in
-theorem isUniformInducing_ccFourierSubtypeL :
+private theorem isUniformInducing_ccFourierSubtypeL :
     IsUniformInducing ⇑(ccFourierSubmodule μ).subtypeL :=
   isUniformEmbedding_subtype_val.isUniformInducing
 
@@ -923,20 +899,20 @@ private theorem ccFourierSubmodule_mem_def (u : ccFourierSubmodule μ) :
 
 omit hφ hφc in
 /-- A choice of `C_c` representative of an element of `ccFourierSubmodule`. -/
-def bochnerRep (u : ccFourierSubmodule μ) : G → ℂ :=
+private def bochnerRep (u : ccFourierSubmodule μ) : G → ℂ :=
   (ccFourierSubmodule_mem_def μ u).choose
 
 omit hφ hφc in
-theorem bochnerRep_continuous (u : ccFourierSubmodule μ) : Continuous (bochnerRep μ u) :=
+private theorem bochnerRep_continuous (u : ccFourierSubmodule μ) : Continuous (bochnerRep μ u) :=
   (ccFourierSubmodule_mem_def μ u).choose_spec.choose
 
 omit hφ hφc in
-theorem bochnerRep_hasCompactSupport (u : ccFourierSubmodule μ) :
+private theorem bochnerRep_hasCompactSupport (u : ccFourierSubmodule μ) :
     HasCompactSupport (bochnerRep μ u) :=
   (ccFourierSubmodule_mem_def μ u).choose_spec.choose_spec.choose
 
 omit hφ hφc in
-theorem ccFourierC0_bochnerRep (u : ccFourierSubmodule μ) :
+private theorem ccFourierC0_bochnerRep (u : ccFourierSubmodule μ) :
     (u : C₀(PontryaginDual G, ℂ))
       = ccFourierC0 μ (bochnerRep μ u) (bochnerRep_continuous μ u)
           (bochnerRep_hasCompactSupport μ u) :=
@@ -1088,8 +1064,18 @@ theorem bochnerCLM_nonneg {γ : C₀(PontryaginDual G, ℂ)} (hγ : ∀ χ, 0 �
     obtain ⟨h1, h2⟩ := Complex.nonneg_iff.mp (hγ χ)
     rw [RCLike.star_def, Complex.conj_ofReal, ← Complex.ofReal_mul, Real.mul_self_sqrt h1]
     exact Complex.ext rfl (by rw [Complex.ofReal_im, ← h2])
-  -- approximate `W` by transforms and take a limit of nonnegative values
-  refine complex_nonneg_of_forall_norm_sub_le fun ε hε => ?_
+  -- approximate `W` by transforms and take a limit of nonnegative values: the target value
+  -- lies in the closure of the closed set of nonnegative complex numbers (`isClosed_Ici`
+  -- for the scoped `ComplexOrder`, whose topology is order-closed).
+  suffices key : ∀ ε : ℝ, 0 < ε →
+      ∃ w : ℂ, 0 ≤ w ∧ ‖bochnerCLM μ hφ hφc γ - w‖ ≤ ε by
+    have hz : bochnerCLM μ hφ hφc γ ∈ closure (Set.Ici (0 : ℂ)) := by
+      rw [Metric.mem_closure_iff]
+      intro ε hε
+      obtain ⟨w, hw0, hwd⟩ := key (ε / 2) (half_pos hε)
+      exact ⟨w, hw0, lt_of_le_of_lt (by rwa [dist_eq_norm]) (half_lt_self hε)⟩
+    simpa using isClosed_Ici.closure_subset hz
+  intro ε hε
   have hMW1 : (0 : ℝ) < 2 * ‖W‖ + 1 := by positivity
   have hden : (0 : ℝ) < ((φ 1).re + 1) * (2 * ‖W‖ + 1) := by positivity
   set δ : ℝ := min 1 (ε / (((φ 1).re + 1) * (2 * ‖W‖ + 1))) with hδdef
@@ -1212,7 +1198,7 @@ theorem continuous_integral_char (σ : Measure (PontryaginDual G)) [IsFiniteMeas
   have hptQ : ∀ χ ∈ Q, ‖(χ x : ℂ) - (χ x₀ : ℂ)‖ ≤ ε / (4 * (M + 1)) := by
     intro χ hχ
     have h1 : (χ x : ℂ) = (χ (x * x₀⁻¹) : ℂ) * (χ x₀ : ℂ) := by
-      rw [← Circle.coe_mul, ← map_mul, inv_mul_cancel_right]
+      rw [← Circle.coe_mul, ← _root_.map_mul, inv_mul_cancel_right]
     calc ‖(χ x : ℂ) - (χ x₀ : ℂ)‖
         = ‖((χ (x * x₀⁻¹) : ℂ) - 1) * (χ x₀ : ℂ)‖ := by
           rw [h1, sub_mul, one_mul]
@@ -1446,7 +1432,7 @@ Hausdorff abelian group is the Fourier–Stieltjes transform of a finite positiv
 measure on the Pontryagin dual:
 
 `φ x = ∫ χ, χ x ∂σ`. -/
-theorem IsPositiveType.exists_bochner_measure (hφ : IsPositiveType φ) (hφc : Continuous φ) :
+theorem _root_.IsPositiveType.exists_bochner_measure (hφ : IsPositiveType φ) (hφc : Continuous φ) :
     ∃ σ : Measure (PontryaginDual G), IsFiniteMeasure σ ∧ σ.Regular ∧
       ∀ x : G, φ x = ∫ χ, (χ x : ℂ) ∂σ := by
   set σ₀ : Measure (PontryaginDual G) := bochnerMeasure0 μ hφ hφc with hσ₀def
@@ -1527,7 +1513,7 @@ include μ in
 /-- **Uniqueness in Bochner's theorem**: the representing measure of a function of positive
 type is unique among finite regular measures.  (Immediate from the Fourier–Stieltjes
 uniqueness theorem; the positivity hypothesis is kept for the sake of the API.) -/
-theorem IsPositiveType.bochner_measure_unique (hφ : IsPositiveType φ)
+theorem _root_.IsPositiveType.bochner_measure_unique (hφ : IsPositiveType φ)
     {σ σ' : Measure (PontryaginDual G)} [IsFiniteMeasure σ] [IsFiniteMeasure σ']
     [σ.Regular] [σ'.Regular]
     (h : ∀ x : G, φ x = ∫ χ, (χ x : ℂ) ∂σ) (h' : ∀ x : G, φ x = ∫ χ, (χ x : ℂ) ∂σ') :
@@ -1537,7 +1523,7 @@ theorem IsPositiveType.bochner_measure_unique (hφ : IsPositiveType φ)
 set_option linter.unusedVariables false in
 /-- **The total mass of the Bochner measure**: under the representation of Bochner's
 theorem, `φ 1` is the (real, nonnegative) total mass of `σ`. -/
-theorem IsPositiveType.bochner_measure_mass (hφ : IsPositiveType φ)
+theorem _root_.IsPositiveType.bochner_measure_mass (hφ : IsPositiveType φ)
     {σ : Measure (PontryaginDual G)} [IsFiniteMeasure σ]
     (h : ∀ x : G, φ x = ∫ χ, (χ x : ℂ) ∂σ) :
     φ 1 = ((σ.real Set.univ : ℝ) : ℂ) := by
@@ -1546,8 +1532,10 @@ theorem IsPositiveType.bochner_measure_mass (hφ : IsPositiveType φ)
       = ∫ _χ : PontryaginDual G, (1 : ℂ) ∂σ := by
         refine integral_congr_ae (Eventually.of_forall fun χ => ?_)
         show ((χ (1 : G) : Circle) : ℂ) = 1
-        rw [map_one, Circle.coe_one]
+        rw [_root_.map_one, Circle.coe_one]
     _ = ((σ.real Set.univ : ℝ) : ℂ) := by
         rw [integral_const, Complex.real_smul, mul_one]
 
 end MainTheorem
+
+end MeasureTheory

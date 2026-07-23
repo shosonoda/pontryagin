@@ -3,7 +3,7 @@ Copyright (c) 2026 The pontryagin contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: The pontryagin contributors
 -/
-import Pontryagin.CcFubini
+import Pontryagin.Mathlib.CcFubini
 import Pontryagin.Translation
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Measure.Haar.Unique
@@ -32,7 +32,8 @@ For `mstar`: interaction with continuity, supports, integrals (`integral_mstar`)
 seminorms (`eLpNorm_mstar`, `MemLp.mstar`).
 
 For convolution of continuous compactly supported functions: `Continuous.mconv`,
-`HasCompactSupport.mconv`, `tsupport_mconv_subset`, the integral identities `integral_mconv` and
+`HasCompactSupport.mconv`, `tsupport_mconv_subset`, the integral identities
+`integral_mconv_eq_mul` and
 `integral_norm_mconv_le`, commutativity `mconv_comm`, associativity `mconv_assoc`, and the
 interaction with `mstar` and translation (`mstar_mconv`, `mtranslate_mconv`,
 `mconv_mtranslate`).
@@ -42,8 +43,9 @@ Cauchy–Schwarz bound `norm_mconv_le_of_memLp_two`, it is continuous
 (`continuous_mconv_of_memLp_two`), it only depends on the a.e. classes (`mconv_congr_ae`), and
 `mconv μ f (mstar f) 1 = ∫ ‖f‖²` (`mconv_mstar_self_one`).
 
-All iterated-integral manipulations go through
-`integral_integral_swap_of_continuous_compactSupport` from `Pontryagin.CcFubini`; no product
+All iterated-integral manipulations go through Mathlib's
+`integral_integral_swap_of_hasCompactSupport` (with the slice API of
+`Pontryagin.Mathlib.CcFubini`); no product
 measures or σ-finiteness assumptions are used anywhere.
 -/
 
@@ -55,6 +57,8 @@ open scoped ENNReal Pointwise ComplexConjugate
 -- The sections below deliberately use one coarse hypothesis block (locally compact Hausdorff
 -- abelian group with regular Haar measure) rather than minimal per-lemma assumptions.
 set_option linter.unusedSectionVars false
+
+namespace MeasureTheory
 
 /-! ### The involution `mstar` -/
 
@@ -80,7 +84,7 @@ section MstarTopology
 
 variable {G : Type*} [CommGroup G] [TopologicalSpace G] [IsTopologicalGroup G] {f : G → ℂ}
 
-theorem Continuous.mstar (hf : Continuous f) : Continuous (_root_.mstar f) :=
+theorem _root_.Continuous.mstar (hf : Continuous f) : Continuous (mstar f) :=
   Complex.continuous_conj.comp (hf.comp continuous_inv)
 
 theorem tsupport_mstar (f : G → ℂ) : tsupport (mstar f) = (tsupport f)⁻¹ := by
@@ -90,8 +94,8 @@ theorem tsupport_mstar (f : G → ℂ) : tsupport (mstar f) = (tsupport f)⁻¹ 
   unfold tsupport
   rw [hsupp, ← inv_closure]
 
-theorem HasCompactSupport.mstar (hf : HasCompactSupport f) :
-    HasCompactSupport (_root_.mstar f) := by
+theorem _root_.HasCompactSupport.mstar (hf : HasCompactSupport f) :
+    HasCompactSupport (mstar f) := by
   have h := IsCompact.inv hf
   rwa [← tsupport_mstar] at h
 
@@ -139,7 +143,7 @@ theorem mconv_kernel_support_subset :
   rwa [mul_inv_cancel_left] at h3
 
 /-- The convolution kernel of two compactly supported functions is compactly supported. -/
-theorem mconv_kernel_hasCompactSupport (hf' : HasCompactSupport f)
+private theorem mconv_kernel_hasCompactSupport (hf' : HasCompactSupport f)
     (hg' : HasCompactSupport g) :
     HasCompactSupport (uncurry fun x y : G => f y * g (y⁻¹ * x)) :=
   HasCompactSupport.of_support_subset_isCompact
@@ -168,7 +172,7 @@ theorem eLpNorm_comp_inv {E : Type*} [NormedAddCommGroup E] {p : ℝ≥0∞} {f 
     (hf : AEStronglyMeasurable f μ) : eLpNorm (fun x => f x⁻¹) p μ = eLpNorm f p μ :=
   eLpNorm_comp_measurePreserving hf (Measure.measurePreserving_inv μ)
 
-theorem MeasureTheory.MemLp.comp_inv {E : Type*} [NormedAddCommGroup E] {p : ℝ≥0∞} {f : G → E}
+theorem MemLp.comp_inv {E : Type*} [NormedAddCommGroup E] {p : ℝ≥0∞} {f : G → E}
     (hf : MemLp f p μ) : MemLp (fun x => f x⁻¹) p μ :=
   hf.comp_measurePreserving (Measure.measurePreserving_inv μ)
 
@@ -176,8 +180,8 @@ theorem eLpNorm_mstar {p : ℝ≥0∞} {f : G → ℂ} (hf : AEStronglyMeasurabl
     eLpNorm (mstar f) p μ = eLpNorm f p μ :=
   (eLpNorm_congr_norm_ae (Eventually.of_forall fun x => by simp)).trans (eLpNorm_comp_inv μ hf)
 
-theorem MeasureTheory.MemLp.mstar {p : ℝ≥0∞} {f : G → ℂ} (hf : MemLp f p μ) :
-    MemLp (_root_.mstar f) p μ :=
+theorem MemLp.mstar {p : ℝ≥0∞} {f : G → ℂ} (hf : MemLp f p μ) :
+    MemLp (mstar f) p μ :=
   ⟨Complex.continuous_conj.comp_aestronglyMeasurable (hf.comp_inv μ).1,
     by rw [eLpNorm_mstar μ hf.1]; exact hf.2⟩
 
@@ -186,7 +190,7 @@ theorem eLpNorm_shift {E : Type*} [NormedAddCommGroup E] {p : ℝ≥0∞} {g : G
     eLpNorm (fun y => g (y⁻¹ * x)) p μ = eLpNorm g p μ :=
   eLpNorm_comp_measurePreserving hg (measurePreserving_inv_mul μ x)
 
-theorem MeasureTheory.MemLp.shift {E : Type*} [NormedAddCommGroup E] {p : ℝ≥0∞} {g : G → E}
+theorem MemLp.shift {E : Type*} [NormedAddCommGroup E] {p : ℝ≥0∞} {g : G → E}
     (hg : MemLp g p μ) (x : G) : MemLp (fun y => g (y⁻¹ * x)) p μ :=
   hg.comp_measurePreserving (measurePreserving_inv_mul μ x)
 
@@ -218,7 +222,7 @@ private theorem integral_integral_mconv_kernel {f g : G → ℂ}
     (hf : Continuous f) (hf' : HasCompactSupport f)
     (hg : Continuous g) (hg' : HasCompactSupport g) :
     ∫ x, ∫ y, f y * g (y⁻¹ * x) ∂μ ∂μ = (∫ x, f x ∂μ) * ∫ x, g x ∂μ := by
-  refine (integral_integral_swap_of_continuous_compactSupport
+  refine (integral_integral_swap_of_hasCompactSupport
     (mconv_kernel_continuous hf hg) (mconv_kernel_hasCompactSupport hf' hg')).trans ?_
   calc ∫ y, ∫ x, f y * g (y⁻¹ * x) ∂μ ∂μ
       = ∫ y, f y * ∫ x, g x ∂μ ∂μ := by
@@ -232,14 +236,14 @@ private theorem integral_integral_mconv_kernel {f g : G → ℂ}
 variable {f g h : G → ℂ}
 
 /-- The convolution of two continuous compactly supported functions is continuous. -/
-theorem Continuous.mconv (hf : Continuous f) (hf' : HasCompactSupport f)
-    (hg : Continuous g) (hg' : HasCompactSupport g) : Continuous (_root_.mconv μ f g) :=
+theorem _root_.Continuous.mconv (hf : Continuous f) (hf' : HasCompactSupport f)
+    (hg : Continuous g) (hg' : HasCompactSupport g) : Continuous (mconv μ f g) :=
   continuous_integral_right (mconv_kernel_continuous hf hg)
     (mconv_kernel_hasCompactSupport hf' hg')
 
 /-- The convolution of two compactly supported functions is compactly supported. -/
-theorem HasCompactSupport.mconv (hf' : HasCompactSupport f) (hg' : HasCompactSupport g) :
-    HasCompactSupport (_root_.mconv μ f g) :=
+theorem _root_.HasCompactSupport.mconv (hf' : HasCompactSupport f) (hg' : HasCompactSupport g) :
+    HasCompactSupport (mconv μ f g) :=
   hasCompactSupport_integral_right (mconv_kernel_hasCompactSupport hf' hg')
 
 /-- The support of a convolution is contained in the product of the supports. -/
@@ -258,7 +262,7 @@ theorem tsupport_mconv_subset (hf' : HasCompactSupport f) (hg' : HasCompactSuppo
   exact hx (by simp [mconv_apply, hzero])
 
 /-- `∫ (f ⋆ g) = (∫ f) * (∫ g)` for continuous compactly supported functions. -/
-theorem integral_mconv (hf : Continuous f) (hf' : HasCompactSupport f)
+theorem integral_mconv_eq_mul (hf : Continuous f) (hf' : HasCompactSupport f)
     (hg : Continuous g) (hg' : HasCompactSupport g) :
     ∫ x, mconv μ f g x ∂μ = (∫ x, f x ∂μ) * ∫ x, g x ∂μ :=
   integral_integral_mconv_kernel μ hf hf' hg hg'
@@ -281,7 +285,7 @@ theorem integral_norm_mconv_le (hf : Continuous f) (hf' : HasCompactSupport f)
   calc ∫ x, ‖mconv μ f g x‖ ∂μ
       ≤ ∫ x, ∫ y, ‖f y * g (y⁻¹ * x)‖ ∂μ ∂μ := integral_mono h1 h2 h3
     _ = ∫ y, ∫ x, ‖f y * g (y⁻¹ * x)‖ ∂μ ∂μ :=
-        integral_integral_swap_of_continuous_compactSupport hFc hFsupp
+        integral_integral_swap_of_hasCompactSupport hFc hFsupp
     _ = ∫ y, ‖f y‖ * ∫ x, ‖g x‖ ∂μ ∂μ := by
         refine integral_congr_ae (Eventually.of_forall fun y => ?_)
         change ∫ x, ‖f y * g (y⁻¹ * x)‖ ∂μ = ‖f y‖ * ∫ x, ‖g x‖ ∂μ
@@ -324,7 +328,7 @@ theorem mconv_assoc (hf : Continuous f) (hf' : HasCompactSupport f)
         refine integral_congr_ae (Eventually.of_forall fun z => ?_)
         exact (integral_mul_const _ _).symm
     _ = ∫ y, ∫ z, f y * g (y⁻¹ * z) * h (z⁻¹ * x) ∂μ ∂μ :=
-        integral_integral_swap_of_continuous_compactSupport hKc hKsupp
+        integral_integral_swap_of_hasCompactSupport hKc hKsupp
     _ = ∫ y, f y * ∫ z, g z * h (z⁻¹ * (y⁻¹ * x)) ∂μ ∂μ := by
         refine integral_congr_ae (Eventually.of_forall fun y => ?_)
         calc ∫ z, f y * g (y⁻¹ * z) * h (z⁻¹ * x) ∂μ
@@ -425,3 +429,5 @@ theorem mconv_mstar_self_one (f : G → ℂ) :
     _ = ((∫ y, ‖f y‖ ^ 2 ∂μ : ℝ) : ℂ) := integral_ofReal
 
 end Haar
+
+end MeasureTheory
