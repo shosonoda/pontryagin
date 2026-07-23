@@ -10,6 +10,26 @@ A formalization challenge: **Pontryagin duality for locally compact abelian grou
 > with no σ-compactness or second-countability assumptions. See [`PLAN.md`](PLAN.md) for
 > the architecture and `data/` for the proof blueprint.
 
+## Using this library
+
+The proof modules under `Pontryagin/` form a reusable Lean library for harmonic
+analysis on locally compact abelian groups (Haar-based convolution, the L¹ group
+algebra, the Fourier transform on the Pontryagin dual, Bochner's theorem, the dual
+Haar measure, Fourier inversion, Plancherel theory, and the duality theorem itself).
+To use it in your own project (Lean toolchain `v4.32.0`), add to your `lakefile.toml`:
+
+```toml
+[[require]]
+name = "pontryagin"
+git = "https://github.com/shosonoda/pontryagin"
+rev = "main"
+```
+
+and `import Pontryagin` (or a specific module such as
+`import Pontryagin.Duality`). The library depends only on Mathlib. General-purpose
+lemmas that fill gaps in Mathlib (and may be upstreamed later — see
+[`UPSTREAMING.md`](UPSTREAMING.md)) live under `Pontryagin/Mathlib/`.
+
 ## The challenge
 
 [`Challenge.lean`](Challenge.lean) states the goal:

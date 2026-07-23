@@ -5,6 +5,7 @@ import Pontryagin.Convolution
 import Pontryagin.Density
 import Pontryagin.DensityLp
 import Pontryagin.DualPolars
+import Pontryagin.Duality
 import Pontryagin.EvalInjective
 import Pontryagin.FiniteMeasureFubini
 import Pontryagin.FourierDense
@@ -15,7 +16,6 @@ import Pontryagin.Plancherel
 import Pontryagin.PositiveType
 import Pontryagin.Spectrum
 import Pontryagin.StoneWeierstrassC0
-import Pontryagin.UnitizationSpectrum
 import Pontryagin.Topology
 import Pontryagin.Translation
-import Pontryagin.Duality
+import Pontryagin.UnitizationSpectrum
